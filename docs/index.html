@@ -23,6 +23,7 @@
     <script src="customNames.js"></script>
     <script src="deploymentData.js"></script>
     <script src="networks.js"></script>
+    <script src="parseEventLogs.js"></script>
 
     <link rel="apple-touch-icon" sizes="180x180" href="images/apple-touch-icon.png">
     <link rel="icon" type="image/png" sizes="32x32" href="images/favicon-32x32.png">
@@ -2409,6 +2410,91 @@
             }
             console.log(now() + " retrieveEvents - this.description: " + this.description);
 
+            // Retrieve Event Logs
+            const events = [];
+            const t = this; // async function has a new `this`, so use `t` to represent the original `this`
+            async function getLogs(fromBlock, toBlock) {
+              console.log(now() + " retrieveEvents.getLogs - fromBlock: " + fromBlock + ", toBlock: " + toBlock);
+              let split = false;
+              try {
+                const filter = {
+                  address: t.settings.contract,
+                  fromBlock,
+                  toBlock,
+                  topics: [
+                    [
+                      // ERC-20 event Transfer(address indexed from, address indexed to, uint tokens);
+                      ethers.utils.id("Transfer(address,address,uint256)"),
+                      // ERC-20 event Approval(address indexed owner, address indexed spender, uint tokens);
+                      ethers.utils.id("Approval(address,address,uint256)"),
+                      // ERC-721 event Transfer(address indexed from, address indexed to, uint256 indexed tokenId);
+                      // ethers.utils.id("Transfer(address,address,uint256)"),
+                      // ERC-721 event Approval(address indexed owner, address indexed approved, uint256 indexed tokenId);
+                      // ethers.utils.id("Approval(address,address,uint256)"),
+                      // ERC-721 event ApprovalForAll(address indexed owner, address indexed operator, bool approved);
+                      ethers.utils.id("ApprovalForAll(address,address,bool)"),
+                      // ERC-1155 event TransferSingle(address indexed operator, address indexed from, address indexed to, uint256 tokenId, uint256 value)
+                      ethers.utils.id("TransferSingle(address,address,address,uint256,uint256)"),
+                      // ERC-1155 event TransferBatch(address indexed operator, address indexed from, address indexed to, uint256[] tokenIds, uint256[] values);
+                      ethers.utils.id("TransferBatch(address,address,address,uint256[],uint256[])"),
+                      // ERC-1155 event ApprovalForAll(address indexed owner, address indexed operator, bool approved);
+                      // ethers.utils.id("ApprovalForAll(address,address,bool)"),
+                    ],
+                    null,
+                    null,
+                  ],
+                };
+                const eventLogs = await provider.getLogs(filter);
+                const records = parseEventLogs(eventLogs, this.type, this.chainId, latestBlockNumber);
+                for (const event of eventLogs) {
+                  // console.log("event: " + JSON.stringify(event));
+                  // const log = contract.interface.parseLog(event);
+                  // console.log("log: " + JSON.stringify(log));
+                  // if (log.eventFragment.name == "Transfer") {
+                  //   // event Transfer(address indexed from, address indexed to, uint tokens);
+                  //   const [ from, to, tokens ] = log.args;
+                  //   // events.push({
+                  //   //   blockNumber: event.blockNumber,
+                  //   //   confirmations: latestBlockNumber - event.blockNumber,
+                  //   //   txIndex: parseInt(event.transactionIndex),
+                  //   //   txHash: event.transactionHash,
+                  //   //   logIndex: parseInt(event.logIndex),
+                  //   //   address: event.address,
+                  //   //   name: log.eventFragment.name,
+                  //   //   from,
+                  //   //   to,
+                  //   //   tokens: tokens.toString(),
+                  //   // });
+                  // } else if (log.eventFragment.name == "Approval") {
+                  //   // event Approval(address indexed owner, address indexed spender, uint tokens);
+                  //   const [ owner, spender, tokens ] = log.args;
+                  //   // events.push({
+                  //   //   blockNumber: event.blockNumber,
+                  //   //   confirmations: latestBlockNumber - event.blockNumber,
+                  //   //   txIndex: parseInt(event.transactionIndex),
+                  //   //   txHash: event.transactionHash,
+                  //   //   logIndex: parseInt(event.logIndex),
+                  //   //   address: event.address,
+                  //   //   name: log.eventFragment.name,
+                  //   //   owner,
+                  //   //   spender,
+                  //   //   tokens: tokens.toString(),
+                  //   // });
+                  // }
+                }
+                // Vue.set(t.erc20, 'events', events);
+              } catch (e) {
+                split = true;
+              }
+              if (split) {
+                const mid = parseInt((fromBlock + toBlock) / 2);
+                await getLogs(fromBlock, mid);
+                await getLogs(parseInt(mid) + 1, toBlock);
+              }
+            }
+            const startBlock = 0;
+            // const startBlock = latestBlockNumber - 10000;
+            await getLogs(startBlock, latestBlockNumber);
 
           },
 
