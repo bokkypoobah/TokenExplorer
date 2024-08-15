@@ -44,9 +44,10 @@
           </b-navbar-brand>
           <b-navbar-nav class="ml-auto">
             <b-nav-item size="sm" @click="settings.tabIndex = 0; saveSettings();" :active="settings.tabIndex == 0" active-class="active" v-b-popover.hover.ds500="'Home, and information on this tool'">Home</b-nav-item>
-            <b-nav-item size="sm" @click="settings.tabIndex = 1; saveSettings();" :active="settings.tabIndex == 1" active-class="active" v-b-popover.hover.ds500="'ERC-20 Fungible Tokens'">ERC-20</b-nav-item>
-            <b-nav-item size="sm" @click="settings.tabIndex = 2; saveSettings();" :active="settings.tabIndex == 2" active-class="active" v-b-popover.hover.ds500="'ERC-721 Non-Fungible Tokens'">ERC-721</b-nav-item>
-            <b-nav-item size="sm" @click="settings.tabIndex = 3; saveSettings();" :active="settings.tabIndex == 3" active-class="active" v-b-popover.hover.ds500="'ERC-1155 Non-Fungible Tokens - WIP'">ERC-1155</b-nav-item>
+            <b-nav-item size="sm" @click="settings.tabIndex = 1; saveSettings();" :active="settings.tabIndex == 1" active-class="active" v-b-popover.hover.ds500="'ERC-20, ERC-721 and ERC-1155 token contract explorer'">Explorer</b-nav-item>
+            <b-nav-item size="sm" @click="settings.tabIndex = 2; saveSettings();" :active="settings.tabIndex == 2" active-class="active" v-b-popover.hover.ds500="'ERC-20 Fungible Tokens'">ERC-20</b-nav-item>
+            <b-nav-item size="sm" @click="settings.tabIndex = 3; saveSettings();" :active="settings.tabIndex == 3" active-class="active" v-b-popover.hover.ds500="'ERC-721 Non-Fungible Tokens'">ERC-721</b-nav-item>
+            <b-nav-item size="sm" @click="settings.tabIndex = 4; saveSettings();" :active="settings.tabIndex == 4" active-class="active" v-b-popover.hover.ds500="'ERC-1155 Non-Fungible Tokens - WIP'">ERC-1155</b-nav-item>
             <b-button size="sm" variant="outline-primary" class="ml-1" @click="connectToWeb3(); processNewBlock(0);" v-b-popover.hover.ds500="'Click to update wallet'">{{ coinbase && (coinbase.substring(0, 8) + '...' + coinbase.slice(-6)) || 'Connect' }}</b-button>
           </b-navbar-nav>
         </b-navbar>
@@ -134,8 +135,28 @@
               </b-card-body>
             </b-card>
 
+            <!-- Explorer: -->
+            <b-card v-if="settings.tabIndex == 1" no-header body-class="m-1 p-1" class="m-0 p-0 border-0">
+              <b-form-group label="contract:" label-for="explorer-contract" label-size="lg" label-class="font-weight-bold pt-0" label-cols-sm="2" label-align-sm="right" :state="!settings.contract || validAddress(settings.contract)" :invalid-feedback="'Invalid address'" :description="erc20Description" class="mx-0 my-1 p-0">
+                <b-input-group size="sm" class="w-50">
+                  <b-form-input type="text" size="sm" id="explorer-contract" v-model="settings.contract" @change="saveSettings" placeholder="Enter token contract address, or select from dropdown"></b-form-input>
+                  <b-input-group-append>
+                    <b-button size="sm" :disabled="!validAddress(settings.contract)" @click="retrieveEvents" variant="primary">Retrieve</b-button>
+                    <b-dropdown size="sm" id="dropdown-left" text="" variant="link" v-b-popover.hover.ds500="'Some sample token contracts'" class="m-0 ml-1 p-0">
+                      <b-dropdown-item v-if="sampleContracts('all').length == 0" disabled>No sample contracts on this network</b-dropdown-item>
+                      <div v-for="(item, index) of sampleContracts('all')" v-bind:key="index">
+                        <b-dropdown-item @click="settings.contract = item.contract; saveSettings();">{{ index }}. {{ item.contract.substring(0, 8) + '...' + item.contract.slice(-6) + ' ' + item.name }}</b-dropdown-item>
+                      </div>
+                    </b-dropdown>
+                    <b-button :disabled="!settings.contract || !validAddress(settings.contract)" @click="copyToClipboard(settings.contract);" variant="link" v-b-popover.hover.ds500="'Copy ERC-20 contract address to clipboard'" class="m-0 ml-3 p-0"><b-icon-clipboard shift-v="+1" font-scale="1.1"></b-icon-clipboard></b-button>
+                    <b-button size="sm" :disabled="!validAddress(settings.contract)" :href="explorer + 'token/' + settings.contract + '#code'" variant="link" v-b-popover.hover.ds500="'View in explorer'" target="_blank" class="m-0 ml-2 p-0"><b-icon-link45deg shift-v="-4" font-scale="1.1"></b-icon-link45deg></b-button>
+                  </b-input-group-append>
+                </b-input-group>
+              </b-form-group>
+            </b-card>
+
             <!-- ERC-20: -->
-            <b-card v-if="settings.tabIndex == 1" header="ERC-20" class="m-0 p-0">
+            <b-card v-if="settings.tabIndex == 2" header="ERC-20" class="m-0 p-0">
               <b-form-group label="contract:" label-for="erc20-contract" label-size="lg" label-class="font-weight-bold pt-0" label-cols-sm="2" label-align-sm="right" :state="!settings.erc20.contract || validAddress(settings.erc20.contract)" :invalid-feedback="'Invalid address'" :description="erc20Description" class="mx-0 my-1 p-0">
                 <b-input-group size="sm" class="w-50">
                   <b-form-input type="text" size="sm" id="erc20-contract" v-model="settings.erc20.contract" @change="saveSettings" placeholder="Enter token contract address, or select from dropdown"></b-form-input>
@@ -546,7 +567,7 @@
             </b-card>
 
             <!-- ERC-721: -->
-            <b-card v-if="settings.tabIndex == 2" header="ERC-721" class="m-0 p-0">
+            <b-card v-if="settings.tabIndex == 3" header="ERC-721" class="m-0 p-0">
               <b-form-group label="contract:" label-for="erc721-contract" label-size="lg" label-class="font-weight-bold pt-0" label-cols-sm="2" label-align-sm="right" :state="!settings.erc721.contract || validAddress(settings.erc721.contract)" :invalid-feedback="'Invalid address'" :description="erc721Description" class="mx-0 my-1 p-0">
                 <b-input-group size="sm" class="w-50">
                   <b-form-input type="text" size="sm" id="erc721-contract" v-model="settings.erc721.contract" @change="saveSettings" placeholder="Enter token contract address, or select from dropdown"></b-form-input>
@@ -835,7 +856,7 @@
             </b-card>
 
             <!-- ERC-1155: -->
-            <b-card v-if="settings.tabIndex == 3" header="ERC-1155" class="m-0 p-0">
+            <b-card v-if="settings.tabIndex == 4" header="ERC-1155" class="m-0 p-0">
               <b-form-group label="contract:" label-for="erc1155-contract" label-size="lg" label-class="font-weight-bold pt-0" label-cols-sm="2" label-align-sm="right" :state="!settings.erc1155.contract || validAddress(settings.erc1155.contract)" :invalid-feedback="'Invalid address'" class="mx-0 my-1 p-0">
                 <b-input-group size="sm" class="w-50">
                   <b-form-input type="text" size="sm" id="erc1155-contract" v-model="settings.erc1155.contract" @change="saveSettings" placeholder="Enter token contract address, or select from dropdown"></b-form-input>
@@ -1113,6 +1134,33 @@
 
           settings: {
             tabIndex: 0,
+
+            // --- New ---
+            contract: null,
+            filter: null,
+            tableIndex: 0,
+            eventsTable: {
+              currentPage: 1,
+              pageSize: 10,
+              sortOption: 'txorderdsc',
+            },
+            balancesTable: {
+              currentPage: 1,
+              pageSize: 10,
+              sortOption: 'txorderdsc',
+            },
+            approvalForAllsTable: {
+              currentPage: 1,
+              pageSize: 10,
+              sortOption: 'txorderdsc',
+            },
+            approvalsTable: {
+              currentPage: 1,
+              pageSize: 10,
+              sortOption: 'txorderdsc',
+            },
+
+            // TODO: Delete below eventually
             erc20: {
               contract: null,
               eventsTable: {
@@ -1202,7 +1250,7 @@
                 sortOption: 'txorderdsc',
               },
             },
-            version: 11,
+            version: 0,
           },
           erc20: {
             symbol: null,
@@ -2194,7 +2242,7 @@
           sampleContracts(type) {
             const results = [];
             for (const [ contract, contractData ] of Object.entries(this.network && this.network.contracts || {})) {
-              if (contractData.type == type) {
+              if (contractData.type == type || type == "all") {
                 results.push({ contract, name: contractData.name });
               }
             }
@@ -2282,6 +2330,66 @@
               console.log(now() + " viewNonFungible - ERROR: " + e.message);
             }
 
+
+          },
+
+          async retrieveEvents() {
+            console.log(now() + " retrieveEvents BEGIN - settings: " + JSON.stringify(this.settings));
+            const provider = new ethers.providers.Web3Provider(window.ethereum);
+            const erc20 = new ethers.Contract(this.settings.contract, ERC20ABI, provider);
+            const erc165 = new ethers.Contract(this.settings.contract, ERC165ABI, provider);
+            const erc721 = new ethers.Contract(this.settings.contract, ERC721ABI, provider);
+            const erc1155 = new ethers.Contract(this.settings.contract, ERC1155ABI, provider);
+            const block = await provider.getBlock("latest");
+            const latestBlockNumber = parseInt(block.number);
+            const timestamp = parseInt(block.timestamp);
+
+            let [ type, supportsERC721, supportsERC1155, supportsERC20 ] = [ null, false, false, false ];
+            let [ symbol, name, decimals, totalSupply ] = [ null, null, null, null ];
+            try {
+              supportsERC721 = await erc165.supportsInterface(ERC721_INTERFACE);
+            } catch (e) {
+              console.log(now() + " INFO retrieveEvents - supportsInterface(ERC721): " + e.message);
+            }
+            console.log(now() + " retrieveEvents - supportsERC721: " + supportsERC721);
+            if (!supportsERC721) {
+              try {
+                supportsERC1155 = await erc165.supportsInterface(ERC1155_INTERFACE);
+              } catch (e) {
+                console.log(now() + " INFO retrieveEvents - supportsInterface(ERC1155): " + e.message);
+              }
+            }
+            console.log(now() + " retrieveEvents - supportsERC1155: " + supportsERC1155);
+            if (!supportsERC721 && !supportsERC721) {
+              try {
+                decimals = parseInt(await erc20.decimals());
+                console.log(now() + " retrieveEvents - decimals: " + decimals);
+              } catch (e) {
+                console.log(now() + " INFO retrieveEvents - erc20.decimals(): " + e.message);
+              }
+              try {
+                totalSupply = (await erc20.totalSupply()).toString();
+                console.log(now() + " retrieveEvents - totalSupply: " + totalSupply);
+              } catch (e) {
+                console.log(now() + " INFO retrieveEvents - erc20.totalSupply(): " + e.message);
+              }
+              if (decimals && totalSupply) {
+                supportsERC20 = true;
+                try {
+                  symbol = await erc20.symbol();
+                  console.log(now() + " retrieveEvents - symbol: " + symbol);
+                } catch (e) {
+                  console.log(now() + " INFO retrieveEvents - erc20.symbol(): " + e.message);
+                }
+                try {
+                  name = await erc20.name();
+                  console.log(now() + " retrieveEvents - name: " + name);
+                } catch (e) {
+                  console.log(now() + " INFO retrieveEvents - erc20.name(): " + e.message);
+                }
+              }
+            }
+            console.log(now() + " retrieveEvents - ERC-20: " + supportsERC20 + ", ERC-721: " + supportsERC721 + ", ERC-1155: " + supportsERC1155);
 
           },
 
