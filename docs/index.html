@@ -138,6 +138,9 @@
             <!-- Explorer: -->
             <b-card v-if="settings.tabIndex == 1" no-header body-class="m-1 p-1" class="m-0 p-0 border-0">
               <b-form-group label="contract:" label-for="explorer-contract" label-size="lg" label-class="font-weight-bold pt-0" label-cols-sm="2" label-align-sm="right" :state="!settings.contract || validAddress(settings.contract)" :invalid-feedback="'Invalid address'" :description="description" class="mx-0 my-1 p-0">
+                <!-- <template v-slot:description>
+                  {{ description }}
+                </template> -->
                 <b-input-group size="sm" class="w-50">
                   <b-form-input type="text" size="sm" id="explorer-contract" v-model="settings.contract" @change="saveSettings" placeholder="Enter token contract address, or select from dropdown"></b-form-input>
                   <b-input-group-append>
@@ -145,7 +148,7 @@
                     <b-dropdown size="sm" id="dropdown-left" text="" variant="link" v-b-popover.hover.ds500="'Some sample token contracts'" class="m-0 ml-1 p-0">
                       <b-dropdown-item v-if="sampleContracts('all').length == 0" disabled>No sample contracts on this network</b-dropdown-item>
                       <div v-for="(item, index) of sampleContracts('all')" v-bind:key="index">
-                        <b-dropdown-item @click="settings.contract = item.contract; saveSettings();">{{ index }}. {{ item.contract.substring(0, 8) + '...' + item.contract.slice(-6) + ' ' + item.name }}</b-dropdown-item>
+                        <b-dropdown-item @click="settings.contract = item.contract; saveSettings();">{{ index }}. {{ item.type.replace(/erc/, 'ERC-') }} {{ item.contract.substring(0, 8) + '...' + item.contract.slice(-6) + ' ' + item.name }}</b-dropdown-item>
                       </div>
                     </b-dropdown>
                     <b-button :disabled="!settings.contract || !validAddress(settings.contract)" @click="copyToClipboard(settings.contract);" variant="link" v-b-popover.hover.ds500="'Copy ERC-20 contract address to clipboard'" class="m-0 ml-3 p-0"><b-icon-clipboard shift-v="+1" font-scale="1.1"></b-icon-clipboard></b-button>
@@ -2252,7 +2255,7 @@
             const results = [];
             for (const [ contract, contractData ] of Object.entries(this.network && this.network.contracts || {})) {
               if (contractData.type == type || type == "all") {
-                results.push({ contract, name: contractData.name });
+                results.push({ contract, type: contractData.type, name: contractData.name });
               }
             }
             return results;
