@@ -188,17 +188,17 @@
                     <span v-b-popover.hover.ds500="'Token Transfer, Approval and ApprovalForAll events'">Events</span>
                   </template>
                 </b-tab>
-                <b-tab active>
+                <b-tab>
                   <template #title>
                     <span v-b-popover.hover.ds500="'ERC-20 token balances, ERC-721 and ERC-1155 tokens'">Tokens</span>
                   </template>
                 </b-tab>
-                <b-tab active>
+                <b-tab>
                   <template #title>
                     <span v-b-popover.hover.ds500="'ERC-20 and ERC-721 Approvals state'">Approvals</span>
                   </template>
                 </b-tab>
-                <b-tab active>
+                <b-tab>
                   <template #title>
                     <span v-b-popover.hover.ds500="'ERC-721 and ERC-1155 ApprovalForAll state'">ApprovalForAll</span>
                   </template>
@@ -207,8 +207,14 @@
 
               <div v-if="settings.tableIndex == 0">
                 <div class="d-flex flex-wrap m-0 p-0">
-                  <div class="mt-0 pr-1" style="width: 20.0rem;">
-                    <b-form-input type="text" size="sm" v-model.trim="settings.filter" @change="saveSettings" debounce="600" placeholder="🔍 address/blocknumber/txhash/tokenid regex"></b-form-input>
+                  <div class="mt-0 pr-1" style="width: 11.0rem;">
+                    <b-form-input type="text" size="sm" v-model.trim="settings.filter" @change="saveSettings" debounce="600" placeholder="🔍 address regex"></b-form-input>
+                  </div>
+                  <div class="mt-0 pr-1" style="width: 11.0rem;">
+                    <b-form-input type="text" size="sm" v-model.trim="settings.tokenIdFilter" @change="saveSettings" debounce="600" placeholder="🔍 tokenid regex"></b-form-input>
+                  </div>
+                  <div class="mt-0 pr-1" style="width: 11.0rem;">
+                    <b-form-input type="text" size="sm" v-model.trim="settings.blockTxHashFilter" @change="saveSettings" debounce="600" placeholder="🔍 block/txhash regex"></b-form-input>
                   </div>
                   <div class="mt-0 flex-grow-1">
                   </div>
@@ -337,15 +343,18 @@
               </div>
 
               <div v-if="settings.tableIndex == 1">
-                {{ tokens }}
+                {{ pagedSortedFilteredTokens }}
+                <!-- {{ tokens }} -->
               </div>
 
               <div v-if="settings.tableIndex == 2">
-                {{ approvals }}
+                {{ pagedSortedFilteredApprovals }}
+                <!-- {{ approvals }} -->
               </div>
 
               <div v-if="settings.tableIndex == 3">
-                {{ approvalForAlls }}
+                {{ pagedSortedFilteredApprovalForAlls }}
+                <!-- {{ approvalForAlls }} -->
               </div>
 
             </b-card>
@@ -1333,16 +1342,20 @@
             // --- New ---
             contract: null,
             filter: null,
+            tokenIdFilter: null,
+            blockTxHashFilter: null,
             tableIndex: 0,
             eventsTable: {
               currentPage: 1,
               pageSize: 10,
               sortOption: 'txorderdsc',
             },
-            balancesTable: {
+            tokensTable: {
               currentPage: 1,
               pageSize: 10,
-              sortOption: 'txorderdsc',
+              sortOptionERC20: 'txorderdsc',
+              sortOptionERC721: 'txorderdsc',
+              sortOptionERC1155: 'txorderdsc',
             },
             approvalForAllsTable: {
               currentPage: 1,
@@ -1445,7 +1458,7 @@
                 sortOption: 'txorderdsc',
               },
             },
-            version: 0,
+            version: 1,
           },
 
           type: null,
@@ -1680,19 +1693,41 @@
           },
 
           // --- Explorer: ---
-          sortedFilteredEvents() {
-            // console.log(now() + " sortedFilteredEvents - this.settings.erc20.eventsTable: " + JSON.stringify(this.settings.erc20.eventsTable));
-            const results = [];
+          filterRegexes() {
+            console.log(now() + " INFO filterRegexes - this.settings.filter: " + this.settings.filter);
             let regex = null;
-            console.log("this.settings.filter: " + this.settings.filter);
             if (this.settings.filter != null && this.settings.filter.length > 0) {
               try {
                 regex = new RegExp(this.settings.filter, 'i');
               } catch (e) {
-                console.log(now() + " sortedFilteredEvents - regex error: " + e.message);
+                console.log(now() + " ERROR filterRegexes - regex error: " + e.message);
                 regex = new RegExp(/thequickbrowndogjumpsoverthelazyfox/, 'i');
               }
             }
+            let tokenIdRegex = null;
+            if (this.settings.tokenIdFilter != null && this.settings.tokenIdFilter.length > 0) {
+              try {
+                tokenIdRegex = new RegExp(this.settings.tokenIdFilter, 'i');
+              } catch (e) {
+                console.log(now() + " ERROR filterRegexes - tokenIdRegex error: " + e.message);
+                tokenIdRegex = new RegExp(/thequickbrowndogjumpsoverthelazyfox/, 'i');
+              }
+            }
+            let blockTxHashRegex = null;
+            if (this.settings.blockTxHashFilter != null && this.settings.blockTxHashFilter.length > 0) {
+              try {
+                blockTxHashRegex = new RegExp(this.settings.blockTxHashFilter, 'i');
+              } catch (e) {
+                console.log(now() + " ERROR filterRegexes - blockTxHashFilter error: " + e.message);
+                blockTxHashRegex = new RegExp(/thequickbrowndogjumpsoverthelazyfox/, 'i');
+              }
+            }
+            return [ regex, tokenIdRegex, blockTxHashRegex ];
+          },
+          sortedFilteredEvents() {
+            // console.log(now() + " sortedFilteredEvents");
+            const results = [];
+            const [ regex, tokenIdRegex, blockTxHashRegex ] = this.filterRegexes;
             for (const event of this.events) {
               let include = true;
               if (regex) {
@@ -1751,6 +1786,199 @@
           pagedSortedFilteredEvents() {
             return this.sortedFilteredEvents.slice((this.settings.eventsTable.currentPage - 1) * this.settings.eventsTable.pageSize, this.settings.eventsTable.currentPage * this.settings.eventsTable.pageSize);
           },
+
+          sortedFilteredTokens() {
+            // TODO
+            // console.log(now() + " sortedFilteredTokens - this.settings.erc20.eventsTable: " + JSON.stringify(this.settings.erc20.eventsTable));
+            const results = [];
+            const [ regex, tokenIdRegex, blockTxHashRegex ] = this.filterRegexes;
+            for (const event of this.events) {
+              let include = true;
+              if (regex) {
+                if (event.type == "Transfer") {
+                  if (event.eventType == "erc721") {
+                    if (!(regex.test(event.from) || regex.test(event.to) || regex.test(event.txHash) || regex.test(event.blockNumber.toString()) || regex.test(event.tokenId.toString()))) {
+                      include = false;
+                    }
+                  } else {
+                    if (!(regex.test(event.from) || regex.test(event.to) || regex.test(event.txHash) || regex.test(event.blockNumber.toString()))) {
+                      include = false;
+                    }
+                  }
+                } else if (event.type == "TransferSingle") {
+                  if (!(regex.test(event.from) || regex.test(event.to) || regex.test(event.txHash) || regex.test(event.blockNumber.toString()) || regex.test(event.tokenId.toString()))) {
+                    include = false;
+                  }
+                } else if (event.type == "TransferBatch") {
+                  // TODO: Scan tokenIds
+                  if (!(regex.test(event.from) || regex.test(event.to) || regex.test(event.txHash) || regex.test(event.blockNumber.toString()))) {
+                    include = false;
+                  }
+                } else if (event.type == "Approval") {
+                  if (!(regex.test(event.owner) || regex.test(event.spender) || regex.test(event.txHash) || regex.test(event.blockNumber))) {
+                    include = false;
+                  }
+                } else if (event.type == "ApprovalForAll") {
+                  if (!(regex.test(event.owner) || regex.test(event.operator) || regex.test(event.txHash) || regex.test(event.blockNumber))) {
+                    include = false;
+                  }
+                }
+              }
+              if (include) {
+                results.push(event);
+              }
+            }
+            if (this.settings.eventsTable.sortOption == "txorderasc") {
+              results.sort((a, b) => {
+                if (a.blockNumber == b.blockNumber) {
+                  return a.logIndex - b.logIndex;
+                } else {
+                  return a.blockNumber - b.blockNumber;
+                }
+              });
+            } else if (this.settings.eventsTable.sortOption == "txorderdsc") {
+              results.sort((a, b) => {
+                if (a.blockNumber == b.blockNumber) {
+                  return b.logIndex - a.logIndex;
+                } else {
+                  return b.blockNumber - a.blockNumber;
+                }
+              });
+            }
+            return results;
+          },
+          pagedSortedFilteredTokens() {
+            return this.sortedFilteredTokens.slice((this.settings.eventsTable.currentPage - 1) * this.settings.eventsTable.pageSize, this.settings.eventsTable.currentPage * this.settings.eventsTable.pageSize);
+          },
+
+          sortedFilteredApprovals() {
+            // TODO
+            // console.log(now() + " sortedFilteredApprovals - this.settings.erc20.eventsTable: " + JSON.stringify(this.settings.erc20.eventsTable));
+            const results = [];
+            const [ regex, tokenIdRegex, blockTxHashRegex ] = this.filterRegexes;
+            for (const event of this.events) {
+              let include = true;
+              if (regex) {
+                if (event.type == "Transfer") {
+                  if (event.eventType == "erc721") {
+                    if (!(regex.test(event.from) || regex.test(event.to) || regex.test(event.txHash) || regex.test(event.blockNumber.toString()) || regex.test(event.tokenId.toString()))) {
+                      include = false;
+                    }
+                  } else {
+                    if (!(regex.test(event.from) || regex.test(event.to) || regex.test(event.txHash) || regex.test(event.blockNumber.toString()))) {
+                      include = false;
+                    }
+                  }
+                } else if (event.type == "TransferSingle") {
+                  if (!(regex.test(event.from) || regex.test(event.to) || regex.test(event.txHash) || regex.test(event.blockNumber.toString()) || regex.test(event.tokenId.toString()))) {
+                    include = false;
+                  }
+                } else if (event.type == "TransferBatch") {
+                  // TODO: Scan tokenIds
+                  if (!(regex.test(event.from) || regex.test(event.to) || regex.test(event.txHash) || regex.test(event.blockNumber.toString()))) {
+                    include = false;
+                  }
+                } else if (event.type == "Approval") {
+                  if (!(regex.test(event.owner) || regex.test(event.spender) || regex.test(event.txHash) || regex.test(event.blockNumber))) {
+                    include = false;
+                  }
+                } else if (event.type == "ApprovalForAll") {
+                  if (!(regex.test(event.owner) || regex.test(event.operator) || regex.test(event.txHash) || regex.test(event.blockNumber))) {
+                    include = false;
+                  }
+                }
+              }
+              if (include) {
+                results.push(event);
+              }
+            }
+            if (this.settings.eventsTable.sortOption == "txorderasc") {
+              results.sort((a, b) => {
+                if (a.blockNumber == b.blockNumber) {
+                  return a.logIndex - b.logIndex;
+                } else {
+                  return a.blockNumber - b.blockNumber;
+                }
+              });
+            } else if (this.settings.eventsTable.sortOption == "txorderdsc") {
+              results.sort((a, b) => {
+                if (a.blockNumber == b.blockNumber) {
+                  return b.logIndex - a.logIndex;
+                } else {
+                  return b.blockNumber - a.blockNumber;
+                }
+              });
+            }
+            return results;
+          },
+          pagedSortedFilteredApprovals() {
+            return this.sortedFilteredApprovals.slice((this.settings.eventsTable.currentPage - 1) * this.settings.eventsTable.pageSize, this.settings.eventsTable.currentPage * this.settings.eventsTable.pageSize);
+          },
+
+          sortedFilteredApprovalForAlls() {
+            // TODO
+            // console.log(now() + " sortedFilteredApprovalForAlls - this.settings.erc20.eventsTable: " + JSON.stringify(this.settings.erc20.eventsTable));
+            const results = [];
+            const [ regex, tokenIdRegex, blockTxHashRegex ] = this.filterRegexes;
+            for (const event of this.events) {
+              let include = true;
+              if (regex) {
+                if (event.type == "Transfer") {
+                  if (event.eventType == "erc721") {
+                    if (!(regex.test(event.from) || regex.test(event.to) || regex.test(event.txHash) || regex.test(event.blockNumber.toString()) || regex.test(event.tokenId.toString()))) {
+                      include = false;
+                    }
+                  } else {
+                    if (!(regex.test(event.from) || regex.test(event.to) || regex.test(event.txHash) || regex.test(event.blockNumber.toString()))) {
+                      include = false;
+                    }
+                  }
+                } else if (event.type == "TransferSingle") {
+                  if (!(regex.test(event.from) || regex.test(event.to) || regex.test(event.txHash) || regex.test(event.blockNumber.toString()) || regex.test(event.tokenId.toString()))) {
+                    include = false;
+                  }
+                } else if (event.type == "TransferBatch") {
+                  // TODO: Scan tokenIds
+                  if (!(regex.test(event.from) || regex.test(event.to) || regex.test(event.txHash) || regex.test(event.blockNumber.toString()))) {
+                    include = false;
+                  }
+                } else if (event.type == "Approval") {
+                  if (!(regex.test(event.owner) || regex.test(event.spender) || regex.test(event.txHash) || regex.test(event.blockNumber))) {
+                    include = false;
+                  }
+                } else if (event.type == "ApprovalForAll") {
+                  if (!(regex.test(event.owner) || regex.test(event.operator) || regex.test(event.txHash) || regex.test(event.blockNumber))) {
+                    include = false;
+                  }
+                }
+              }
+              if (include) {
+                results.push(event);
+              }
+            }
+            if (this.settings.eventsTable.sortOption == "txorderasc") {
+              results.sort((a, b) => {
+                if (a.blockNumber == b.blockNumber) {
+                  return a.logIndex - b.logIndex;
+                } else {
+                  return a.blockNumber - b.blockNumber;
+                }
+              });
+            } else if (this.settings.eventsTable.sortOption == "txorderdsc") {
+              results.sort((a, b) => {
+                if (a.blockNumber == b.blockNumber) {
+                  return b.logIndex - a.logIndex;
+                } else {
+                  return b.blockNumber - a.blockNumber;
+                }
+              });
+            }
+            return results;
+          },
+          pagedSortedFilteredApprovalForAlls() {
+            return this.sortedFilteredApprovalForAlls.slice((this.settings.eventsTable.currentPage - 1) * this.settings.eventsTable.pageSize, this.settings.eventsTable.currentPage * this.settings.eventsTable.pageSize);
+          },
+
 
           // --- ERC-20: ---
           sortedFilteredERC20Events() {
