@@ -157,6 +157,8 @@
                   </b-input-group-append>
                 </b-input-group>
               </b-form-group>
+
+              {{  events }}
             </b-card>
 
             <!-- ERC-20: -->
@@ -1263,6 +1265,10 @@
           decimals: null,
           totalSupply: null,
           description: null,
+          events: [],
+          tokens: [],
+          approvalForAlls: [],
+          approvals: [],
 
           // TODO Delete below eventually
           erc20: {
@@ -2347,7 +2353,7 @@
           },
 
           async retrieveEvents() {
-            console.log(now() + " retrieveEvents BEGIN - settings: " + JSON.stringify(this.settings));
+            console.log(now() + " INFO retrieveEvents BEGIN - settings: " + JSON.stringify(this.settings));
             const provider = new ethers.providers.Web3Provider(window.ethereum);
             const erc20 = new ethers.Contract(this.settings.contract, ERC20ABI, provider);
             const erc165 = new ethers.Contract(this.settings.contract, ERC165ABI, provider);
@@ -2446,43 +2452,10 @@
                 };
                 const eventLogs = await provider.getLogs(filter);
                 const records = parseEventLogs(eventLogs, this.type, this.chainId, latestBlockNumber);
-                for (const event of eventLogs) {
-                  // console.log("event: " + JSON.stringify(event));
-                  // const log = contract.interface.parseLog(event);
-                  // console.log("log: " + JSON.stringify(log));
-                  // if (log.eventFragment.name == "Transfer") {
-                  //   // event Transfer(address indexed from, address indexed to, uint tokens);
-                  //   const [ from, to, tokens ] = log.args;
-                  //   // events.push({
-                  //   //   blockNumber: event.blockNumber,
-                  //   //   confirmations: latestBlockNumber - event.blockNumber,
-                  //   //   txIndex: parseInt(event.transactionIndex),
-                  //   //   txHash: event.transactionHash,
-                  //   //   logIndex: parseInt(event.logIndex),
-                  //   //   address: event.address,
-                  //   //   name: log.eventFragment.name,
-                  //   //   from,
-                  //   //   to,
-                  //   //   tokens: tokens.toString(),
-                  //   // });
-                  // } else if (log.eventFragment.name == "Approval") {
-                  //   // event Approval(address indexed owner, address indexed spender, uint tokens);
-                  //   const [ owner, spender, tokens ] = log.args;
-                  //   // events.push({
-                  //   //   blockNumber: event.blockNumber,
-                  //   //   confirmations: latestBlockNumber - event.blockNumber,
-                  //   //   txIndex: parseInt(event.transactionIndex),
-                  //   //   txHash: event.transactionHash,
-                  //   //   logIndex: parseInt(event.logIndex),
-                  //   //   address: event.address,
-                  //   //   name: log.eventFragment.name,
-                  //   //   owner,
-                  //   //   spender,
-                  //   //   tokens: tokens.toString(),
-                  //   // });
-                  // }
+                for (const record of records) {
+                  events.push(record);
                 }
-                // Vue.set(t.erc20, 'events', events);
+                Vue.set(t, 'events', events);
               } catch (e) {
                 split = true;
               }
@@ -2495,7 +2468,7 @@
             const startBlock = 0;
             // const startBlock = latestBlockNumber - 10000;
             await getLogs(startBlock, latestBlockNumber);
-
+            // console.log(now() + " INFO retrieveEvents END - events: " + JSON.stringify(events, null, 2));
           },
 
           async retrieveERC20() {

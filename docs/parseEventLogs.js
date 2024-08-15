@@ -4,7 +4,7 @@ function parseEventLogs(logs, type, chainId, latestBlockNumber) {
   const erc1155Interface = new ethers.utils.Interface(ERC1155ABI);
   const records = [];
   for (const log of logs) {
-    console.log(now() + " INFO parseEventLogs - log: " + JSON.stringify(log));
+    // console.log(now() + " INFO parseEventLogs - log: " + JSON.stringify(log));
     if (!log.removed) {
       const contract = log.address;
       let eventRecord = null;
@@ -86,6 +86,6 @@ function parseEventLogs(logs, type, chainId, latestBlockNumber) {
 
     }
   }
-  console.log(now() + " INFO parseEventLogs - records: " + JSON.stringify(records, null, 2));
+  // console.log(now() + " INFO parseEventLogs - records: " + JSON.stringify(records, null, 2));
   return records;
 }
