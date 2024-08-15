@@ -2353,21 +2353,17 @@
             const latestBlockNumber = parseInt(block.number);
             const timestamp = parseInt(block.timestamp);
 
-            let [ supportsERC721, supportsERC1155, supportsERC20 ] = [ false, false, false ];
+            let [ supportsERC721, supportsERC1155 ] = [ false, false ];
             [ this.type, this.symbol, this.name, this.decimals, this.totalSupply, this.description ] = [ null, null, null, null, null, null ];
             try {
               supportsERC721 = await erc165.supportsInterface(ERC721_INTERFACE);
             } catch (e) {
-              // console.log(now() + " INFO retrieveEvents - supportsInterface(ERC721): " + e.message);
             }
-            // console.log(now() + " retrieveEvents - supportsERC721: " + supportsERC721);
             if (supportsERC721) {
               this.type = "erc721";
               try {
                 this.symbol = await erc721.symbol();
-                // console.log(now() + " retrieveEvents - this.symbol: " + this.symbol);
               } catch (e) {
-                // console.log(now() + " INFO retrieveEvents - erc721.symbol(): " + e.message);
               }
             } else {
               try {
@@ -2376,37 +2372,26 @@
                   this.type = "erc1155";
                 }
               } catch (e) {
-                // console.log(now() + " INFO retrieveEvents - supportsInterface(ERC1155): " + e.message);
               }
             }
-            // console.log(now() + " retrieveEvents - supportsERC1155: " + supportsERC1155);
-            if (!supportsERC721 && !supportsERC721) {
+            if (!this.type) {
               try {
                 this.decimals = parseInt(await erc20.decimals());
-                // console.log(now() + " retrieveEvents - this.decimals: " + this.decimals);
               } catch (e) {
-                // console.log(now() + " INFO retrieveEvents - erc20.decimals(): " + e.message);
               }
               try {
                 this.totalSupply = (await erc20.totalSupply()).toString();
-                // console.log(now() + " retrieveEvents - this.totalSupply: " + this.totalSupply);
               } catch (e) {
-                // console.log(now() + " INFO retrieveEvents - erc20.totalSupply(): " + e.message);
               }
               if (this.decimals && this.totalSupply) {
                 this.type = "erc20";
-                supportsERC20 = true;
                 try {
                   this.symbol = await erc20.symbol();
-                  // console.log(now() + " retrieveEvents - this.symbol: " + this.symbol);
                 } catch (e) {
-                  // console.log(now() + " INFO retrieveEvents - erc20.symbol(): " + e.message);
                 }
                 try {
                   this.name = await erc20.name();
-                  // console.log(now() + " retrieveEvents - this.name: " + this.name);
                 } catch (e) {
-                  // console.log(now() + " INFO retrieveEvents - erc20.name(): " + e.message);
                 }
               }
             }
@@ -2419,17 +2404,7 @@
             } else {
               this.description = "Not a token contract";
             }
-            console.log(now() + " retrieveEvents - ERC-20: " + supportsERC20 + ", ERC-721: " + supportsERC721 + ", ERC-1155: " + supportsERC1155);
-            console.log(now() + " retrieveEvents - this.type: " + this.type);
-            console.log(now() + " retrieveEvents - this.symbol: " + this.symbol);
             console.log(now() + " retrieveEvents - this.description: " + this.description);
-
-            // type: null,
-            // symbol: null,
-            // name: null,
-            // decimals: null,
-            // totalSupply: null,
-            // description: null,
 
 
           },
