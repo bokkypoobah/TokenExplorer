@@ -2575,13 +2575,6 @@
                 const fileContent = await fetch(uriResults, { mode: 'cors', signal: AbortSignal.timeout(20000) }).then(response => response.json());
                 this.modalNonFungible.logs.push({ log:now() + " Fetched '" + JSON.stringify(fileContent, null, 2) + "'" });
                 console.log(now() + " retrieveERC20 viewNonFungible - fileContent: '" + JSON.stringify(fileContent, null, 2) + "'");
-
-                // name: null,
-                // description: null,
-                // attributes: [],
-                // image: null,
-
-
                 this.modalNonFungible.name = fileContent && fileContent.name || null;
                 this.modalNonFungible.logs.push({ log:now() + " name '" + this.modalNonFungible.name + "'" });
                 this.modalNonFungible.description = fileContent && fileContent.description || null;
@@ -2605,8 +2598,6 @@
             } catch (e) {
               console.log(now() + " viewNonFungible - ERROR: " + e.message);
             }
-
-
           },
 
           async retrieveEvents() {
@@ -2677,7 +2668,7 @@
             const events = [];
             const t = this; // async function has a new `this`, so use `t` to represent the original `this`
             async function getLogs(fromBlock, toBlock) {
-              console.log(now() + " retrieveEvents.getLogs - fromBlock: " + fromBlock + ", toBlock: " + toBlock);
+              console.log(now() + " INFO retrieveEvents.getLogs - fromBlock: " + fromBlock + ", toBlock: " + toBlock);
               let split = false;
               try {
                 const filter = {
@@ -2726,6 +2717,244 @@
             // const startBlock = latestBlockNumber - 10000;
             await getLogs(startBlock, latestBlockNumber);
             // console.log(now() + " INFO retrieveEvents END - events: " + JSON.stringify(events, null, 2));
+            if (this.type == "erc20") {
+              this.collateERC20();
+            } else if (this.type == "erc721") {
+              this.collateERC721();
+            } else if (this.type == "erc1155") {
+              this.collateERC1155();
+            }
+          },
+
+          async collateERC20() {
+            console.log(now() + " INFO collateERC20");
+            const balanceCollator = {};
+            const approvalsCollator = {};
+            for (const event of this.events) {
+              console.log(now() + " " + JSON.stringify(event));
+              if (event.type == "Transfer") {
+                if (!(event.from in balanceCollator)) {
+                  balanceCollator[event.from] = {
+                    blockNumber: event.blockNumber,
+                    txIndex: event.txIndex,
+                    txHash: event.txHash,
+                    logIndex: event.logIndex,
+                    tokens: event.from == ADDRESS0 ? "0" : ethers.BigNumber.from(0).sub(event.tokens).toString(),
+                  };
+                } else {
+                  balanceCollator[event.from].blockNumber = event.blockNumber;
+                  balanceCollator[event.from].txIndex = event.txIndex;
+                  balanceCollator[event.from].txHash = event.txHash;
+                  balanceCollator[event.from].logIndex = event.logIndex;
+                  balanceCollator[event.from].blockNumber = event.blockNumber;
+                  if (event.from != ADDRESS0) {
+                    balanceCollator[event.from].tokens = ethers.BigNumber.from(balanceCollator[event.from].tokens).sub(event.tokens).toString();
+                  }
+                }
+                if (!(event.to in balanceCollator)) {
+                  balanceCollator[event.to] = {
+                    blockNumber: event.blockNumber,
+                    txIndex: event.txIndex,
+                    txHash: event.txHash,
+                    logIndex: event.logIndex,
+                    tokens: event.tokens,
+                  };
+                } else {
+                  balanceCollator[event.to].blockNumber = event.blockNumber;
+                  balanceCollator[event.to].txIndex = event.txIndex;
+                  balanceCollator[event.to].txHash = event.txHash;
+                  balanceCollator[event.to].logIndex = event.logIndex;
+                  balanceCollator[event.to].tokens = ethers.BigNumber.from(balanceCollator[event.to].tokens).add(event.tokens).toString();
+                }
+              } else if (event.type == "Approval") {
+                if (!(event.owner in approvalsCollator)) {
+                  approvalsCollator[event.owner] = {};
+                }
+                approvalsCollator[event.owner][event.spender] = {
+                  blockNumber: event.blockNumber,
+                  txIndex: event.txIndex,
+                  txHash: event.txHash,
+                  logIndex: event.logIndex,
+                  tokens: event.tokens,
+                };
+              }
+            }
+            console.log(now() + " INFO collateERC20 - balanceCollator: " + JSON.stringify(balanceCollator, null, 2));
+            console.log(now() + " INFO collateERC20 - approvalsCollator: " + JSON.stringify(approvalsCollator, null, 2));
+            // Vue.set(this.erc20, 'events', events);
+            // const balances = [];
+            // for (const [ owner, balance ] of Object.entries(balanceCollator)) {
+            //   balances.push({ owner, ...balance });
+            // }
+            // Vue.set(this.erc20, 'balances', balances);
+            // const approvals = [];
+            // for (const [ owner, spenders ] of Object.entries(approvalsCollator)) {
+            //   for (const [spender, tokens] of Object.entries(spenders)) {
+            //     approvals.push({ owner, spender, ...tokens });
+            //   }
+            // }
+            // Vue.set(this.erc20, 'approvals', approvals);
+          },
+          async collateERC721() {
+            console.log(now() + " INFO collateERC721");
+
+            const tokensCollator = {};
+            const approvalForAllsCollator = {};
+            const approvalsCollator = {};
+            for (const event of this.events) {
+              if (event.type == "Transfer") {
+                tokensCollator[event.tokenId] = {
+                  blockNumber: event.blockNumber,
+                  txIndex: event.txIndex,
+                  txHash: event.txHash,
+                  logIndex: event.logIndex,
+                  owner: event.to,
+                };
+              } else if (event.type == "Approval") {
+                approvalsCollator[event.tokenId] = {
+                  blockNumber: event.blockNumber,
+                  txIndex: event.txIndex,
+                  txHash: event.txHash,
+                  logIndex: event.logIndex,
+                  owner: event.owner,
+                  spender: event.spender,
+                };
+              } else if (event.type == "ApprovalForAll") {
+                if (!(event.owner in approvalForAllsCollator)) {
+                  approvalForAllsCollator[event.owner] = {};
+                }
+                approvalForAllsCollator[event.owner][event.operator] = {
+                  blockNumber: event.blockNumber,
+                  txIndex: event.txIndex,
+                  txHash: event.txHash,
+                  logIndex: event.logIndex,
+                  approved: event.approved,
+                };
+              } else {
+                console.log(now() + " INFO collateERC721 - ELSE event: " + JSON.stringify(event));
+              }
+            }
+            console.log(now() + " INFO collateERC721 - tokensCollator: " + JSON.stringify(tokensCollator, null, 2));
+            console.log(now() + " INFO collateERC721 - approvalForAllsCollator: " + JSON.stringify(approvalForAllsCollator, null, 2));
+            console.log(now() + " INFO collateERC721 - approvalsCollator: " + JSON.stringify(approvalsCollator, null, 2));
+
+            // const tokens = [];
+            // for (const [ tokenId, tokenData ] of Object.entries(tokensCollator)) {
+            //   tokens.push({ tokenId, ...tokenData });
+            // }
+            // Vue.set(this.erc721, 'tokens', tokens);
+            // const approvalForAlls = [];
+            // for (const [ owner, ownerData ] of Object.entries(approvalForAllsCollator)) {
+            //   for (const [ operator, operatorData ] of Object.entries(ownerData)) {
+            //     approvalForAlls.push({ owner, operator, ...operatorData });
+            //   }
+            // }
+            // Vue.set(this.erc721, 'approvalForAlls', approvalForAlls);
+            // const approvals = [];
+            // for (const [ tokenId, tokenData ] of Object.entries(approvalsCollator)) {
+            //   approvals.push({ tokenId, ...tokenData });
+            // }
+            // Vue.set(this.erc721, 'approvals', approvals);
+          },
+          async collateERC1155() {
+            console.log(now() + " INFO collateERC1155");
+
+            const tokensCollator = {};
+            const approvalForAllsCollator = {};
+            for (const event of this.events) {
+              if (event.type == "TransferSingle") {
+                if (!(event.tokenId in tokensCollator)) {
+                  tokensCollator[event.tokenId] = {};
+                }
+                if (!(event.from in tokensCollator[event.tokenId])) {
+                  tokensCollator[event.tokenId][event.from] = {
+                    blockNumber: event.blockNumber,
+                    txIndex: event.txIndex,
+                    txHash: event.txHash,
+                    logIndex: event.logIndex,
+                    value: event.from == ADDRESS0 ? "0" : ethers.BigNumber.from(0).sub(event.value).toString(),
+                  };
+                } else {
+                  tokensCollator[event.tokenId][event.from].blockNumber = event.blockNumber;
+                  tokensCollator[event.tokenId][event.from].txIndex = event.txIndex;
+                  tokensCollator[event.tokenId][event.from].txHash = event.txHash;
+                  tokensCollator[event.tokenId][event.from].logIndex = event.logIndex;
+                  if (event.from != ADDRESS0) {
+                    tokensCollator[event.tokenId][event.from].value = ethers.BigNumber.from(tokensCollator[event.tokenId][event.from].value).add(event.value).toString();
+                  }
+                }
+                if (!(event.to in tokensCollator[event.tokenId])) {
+                  tokensCollator[event.tokenId][event.to] = {
+                    blockNumber: event.blockNumber,
+                    txIndex: event.txIndex,
+                    txHash: event.txHash,
+                    logIndex: event.logIndex,
+                    value: event.value,
+                  };
+                } else {
+                  tokensCollator[event.tokenId][event.to].blockNumber = event.blockNumber;
+                  tokensCollator[event.tokenId][event.to].txIndex = event.txIndex;
+                  tokensCollator[event.tokenId][event.to].txHash = event.txHash;
+                  tokensCollator[event.tokenId][event.to].logIndex = event.logIndex;
+                  tokensCollator[event.tokenId][event.to].value = ethers.BigNumber.from(tokensCollator[event.tokenId][event.to].value).add(event.value).toString();
+                }
+              } else if (event.type == "TransferBatch") {
+                for (let i = 0; i < event.tokenIds.length; i++) {
+                  if (!(event.tokenIds[i] in tokensCollator)) {
+                    tokensCollator[event.tokenIds[i]] = {};
+                  }
+                  if (!(event.from in tokensCollator[event.tokenIds[i]])) {
+                    tokensCollator[event.tokenIds[i]][event.from] = {
+                      blockNumber: event.blockNumber,
+                      txIndex: event.txIndex,
+                      txHash: event.txHash,
+                      logIndex: event.logIndex,
+                      value: event.from == ADDRESS0 ? "0" : ethers.BigNumber.from(0).sub(event.values[i]).toString(),
+                    };
+                  } else {
+                    tokensCollator[event.tokenIds[i]][event.from].blockNumber = event.blockNumber;
+                    tokensCollator[event.tokenIds[i]][event.from].txIndex = event.txIndex;
+                    tokensCollator[event.tokenIds[i]][event.from].txHash = event.txHash;
+                    tokensCollator[event.tokenIds[i]][event.from].logIndex = event.logIndex;
+                    if (event.from != ADDRESS0) {
+                      tokensCollator[event.tokenIds[i]][event.from].value = ethers.BigNumber.from(tokensCollator[event.tokenIds[i]][event.from].value).add(event.values[i]).toString();
+                    }
+                  }
+
+                }
+              } else if (event.type == "ApprovalForAll") {
+                if (!(event.owner in approvalForAllsCollator)) {
+                  approvalForAllsCollator[event.owner] = {};
+                }
+                approvalForAllsCollator[event.owner][event.operator] = {
+                  blockNumber: event.blockNumber,
+                  txIndex: event.txIndex,
+                  txHash: event.txHash,
+                  logIndex: event.logIndex,
+                  approved: event.approved,
+                };
+              } else {
+                console.log(now() + " INFO collateERC1155 - ELSE event: " + JSON.stringify(event));
+              }
+            }
+            console.log(now() + " INFO collateERC1155 - tokensCollator: " + JSON.stringify(tokensCollator, null, 2));
+            console.log(now() + " INFO collateERC1155 - approvalForAllsCollator: " + JSON.stringify(approvalForAllsCollator, null, 2));
+            // Vue.set(this.erc1155, 'events', events);
+            // const tokens = [];
+            // for (const [ tokenId, tokenData ] of Object.entries(tokensCollator)) {
+            //   for (const [ owner, ownerData ] of Object.entries(tokenData)) {
+            //     tokens.push({ tokenId, owner, ...ownerData });
+            //   }
+            // }
+            // Vue.set(this.erc1155, 'tokens', tokens);
+            // const approvalForAlls = [];
+            // for (const [ owner, ownerData ] of Object.entries(approvalForAllsCollator)) {
+            //   for (const [ operator, operatorData ] of Object.entries(ownerData)) {
+            //     approvalForAlls.push({ owner, operator, ...operatorData });
+            //   }
+            // }
+            // Vue.set(this.erc1155, 'approvalForAlls', approvalForAlls);
+
           },
 
           async retrieveERC20() {
