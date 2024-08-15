@@ -183,12 +183,12 @@
                     </b-badge>
                   </div>
                 </template>
-                <b-tab active>
+                <b-tab>
                   <template #title>
                     <span v-b-popover.hover.ds500="'Token Transfer, Approval and ApprovalForAll events'">Events</span>
                   </template>
                 </b-tab>
-                <b-tab>
+                <b-tab active>
                   <template #title>
                     <span v-b-popover.hover.ds500="'ERC-20 token balances, ERC-721 and ERC-1155 tokens'">Tokens</span>
                   </template>
@@ -343,8 +343,83 @@
               </div>
 
               <div v-if="settings.tableIndex == 1">
-                {{ pagedSortedFilteredTokens }}
-                <!-- {{ tokens }} -->
+                <div class="d-flex flex-wrap m-0 p-0">
+                  <div class="mt-0 pr-1" style="width: 11.0rem;">
+                    <b-form-input type="text" size="sm" v-model.trim="settings.filter" @change="saveSettings" debounce="600" placeholder="🔍 address regex"></b-form-input>
+                  </div>
+                  <div class="mt-0 pr-1" style="width: 11.0rem;">
+                    <b-form-input type="text" size="sm" v-model.trim="settings.tokenIdFilter" @change="saveSettings" debounce="600" placeholder="🔍 tokenid regex"></b-form-input>
+                  </div>
+                  <div class="mt-0 pr-1" style="width: 11.0rem;">
+                    <b-form-input type="text" size="sm" v-model.trim="settings.blockTxHashFilter" @change="saveSettings" debounce="600" placeholder="🔍 block/txhash regex"></b-form-input>
+                  </div>
+                  <div class="mt-0 flex-grow-1">
+                  </div>
+                  <div class="mt-0 pr-1">
+                    <b-button size="sm" @click="retrieveTimestamps(pagedSortedFilteredTokens.map(e => e.blockNumber))" variant="link" v-b-popover.hover.ds500="'Retrieve timestamps for tokens below'"><b-icon-clock-history shift-v="+1" font-scale="1.2"></b-icon-clock-history></b-button>
+                  </div>
+                  <div class="mt-0 flex-grow-1">
+                  </div>
+                  <div class="mt-0 pl-1">
+                    <div v-if="type != 'erc721' && type != 'erc1155'">
+                      <b-form-select size="sm" v-model="settings.tokensTable.sortOptionERC20" @change="saveSettings" :options="erc20TokensSortOptions" v-b-popover.hover.bottom="'Yeah. Sort'"></b-form-select>
+                    </div>
+                    <div v-if="type == 'erc721'">
+                      <b-form-select size="sm" v-model="settings.tokensTable.sortOptionERC721" @change="saveSettings" :options="erc721And1155TokensSortOptions" v-b-popover.hover.bottom="'Yeah. Sort'"></b-form-select>
+                    </div>
+                    <div v-if="type == 'erc1155'">
+                      <b-form-select size="sm" v-model="settings.tokensTable.sortOptionERC1155" @change="saveSettings" :options="erc721And1155TokensSortOptions" v-b-popover.hover.bottom="'Yeah. Sort'"></b-form-select>
+                    </div>
+                  </div>
+                  <div class="mt-0 pl-1">
+                    <font size="-2" v-b-popover.hover.bottom="'# filtered / total events'">{{ formatNumber(sortedFilteredTokens.length) + '/' + formatNumber(tokens.length) }}</font>
+                  </div>
+                  <div class="mt-0 pl-1">
+                    <b-pagination size="sm" v-model="settings.tokensTable.currentPage" @input="saveSettings" :total-rows="sortedFilteredTokens.length" :per-page="settings.tokensTable.pageSize" style="height: 0;"></b-pagination>
+                  </div>
+                  <div class="mt-0 pl-1">
+                    <b-form-select size="sm" v-model="settings.tokensTable.pageSize" @change="saveSettings();" :options="pageSizes" v-b-popover.hover.bottom="'Yeah. Page size'"></b-form-select>
+                  </div>
+                </div>
+                <b-table small fixed striped :fields="type == 'erc20' ? tokensFieldsFungible : tokensFieldsNonFungible" :items="pagedSortedFilteredTokens" show-empty empty-html="Click [Retrieve] above" head-variant="light" class="mt-1">
+                  <template #cell(number)="data">
+                      <font size="-1" class="text-muted">{{ parseInt(data.index) + ((settings.tokensTable.currentPage - 1) * settings.tokensTable.pageSize) + 1 }}</font>
+                  </template>
+                  <template #cell(latestUpdate)="data">
+                    <b-link size="sm" :href="explorer + 'tx/' + data.item.txHash + '#eventlog#' + data.item.logIndex" variant="link" v-b-popover.hover.ds500="(timestamps[chainId] && timestamps[chainId][data.item.blockNumber]) ? ('Block ' + formatNumber(data.item.blockNumber)) : 'blockNumber:txIndex'" target="_blank">
+                      <font size="-1">
+                        <span v-if="timestamps[chainId] && timestamps[chainId][data.item.blockNumber]">
+                          {{ formatTimestamp(timestamps[chainId][data.item.blockNumber]) }}
+                        </span>
+                        <span v-else>
+                          {{ data.item.blockNumber + ':' + data.item.txIndex }}
+                        </span>
+                      </font>
+                    </b-link>
+                    <font size="-1" v-b-popover.hover.ds500="'logIndex'" class="text-muted">{{ data.item.logIndex }}</font>
+                    <font size="-1" v-b-popover.hover.ds500="'txHash'" class="text-muted">{{ data.item.txHash.substring(0, 8) + '...' + data.item.txHash.slice(-6) }}</font>
+                  </template>
+                  <template #cell(owner)="data">
+                    <b-link size="sm" :href="explorer + 'token/' + settings.contract + '?a=' + data.item.owner" variant="link" v-b-popover.hover.ds500="data.item.owner" target="_blank">
+                      {{ data.item.owner.substring(0, 8) + '...' + data.item.owner.slice(-6) }}
+                    </b-link>
+                  </template>
+                  <template #head(owners)="data">
+                    {{ type == "erc721" ? "Owner" : "Owner(s)" }}
+                  </template>
+                  <template #cell(owners)="data">
+                    <b-link size="sm" :href="explorer + 'token/' + settings.contract + '?a=' + data.item.owner" variant="link" v-b-popover.hover.ds500="data.item.owner" target="_blank">
+                      {{ data.item.owner.substring(0, 8) + '...' + data.item.owner.slice(-6) }}
+                    </b-link>
+                  </template>
+                  <template #cell(tokens)="data">
+                    <font size="-2" class="text-muted">
+                      {{ formatNumber(data.item.tokens) }}
+                    </font>
+                    {{ formatDecimals(data.item.tokens, decimals) }}
+                  </template>
+                </b-table>
+
               </div>
 
               <div v-if="settings.tableIndex == 2">
@@ -482,7 +557,7 @@
                   <div class="mt-0 flex-grow-1">
                   </div>
                   <div class="mt-0 pl-1">
-                    <b-form-select size="sm" v-model="settings.erc20.balancesTable.sortOption" @change="saveSettings" :options="erc20BalancesSortOptions" v-b-popover.hover.bottom="'Yeah. Sort'"></b-form-select>
+                    <b-form-select size="sm" v-model="settings.erc20.balancesTable.sortOption" @change="saveSettings" :options="erc20TokensSortOptions" v-b-popover.hover.bottom="'Yeah. Sort'"></b-form-select>
                   </div>
                   <div class="mt-0 pl-1">
                     <font size="-2" v-b-popover.hover.bottom="'# filtered / total events'">{{ formatNumber(sortedFilteredERC20Balances.length) + '/' + formatNumber(erc20.balances.length) }}</font>
@@ -1526,13 +1601,21 @@
             { value: 'txorderasc', text: '▲ TxOrder' },
             { value: 'txorderdsc', text: '▼ TxOrder' },
           ],
-          erc20BalancesSortOptions: [
+          erc20TokensSortOptions: [
             { value: 'txorderasc', text: '▲ Latest Update' },
             { value: 'txorderdsc', text: '▼ Latest Update' },
             { value: 'ownerasc', text: '▲ Owner' },
             { value: 'ownerdsc', text: '▼ Owner' },
             { value: 'balanceasc', text: '▲ Balance' },
             { value: 'balancedsc', text: '▼ Balance' },
+          ],
+          erc721And1155TokensSortOptions: [
+            { value: 'txorderasc', text: '▲ Latest Update' },
+            { value: 'txorderdsc', text: '▼ Latest Update' },
+            { value: 'tokenidasc', text: '▲ Token Id, ▲ Owner' },
+            { value: 'tokeniddsc', text: '▼ Token Id, ▲ Owner' },
+            { value: 'ownerasc', text: '▲ Owner, ▲ Token Id' },
+            { value: 'ownerdsc', text: '▼ Owner, ▲ Token Id' },
           ],
           erc20AllowancesSortOptions: [
             { value: 'txorderasc', text: '▲ Latest Update' },
@@ -1543,14 +1626,6 @@
             { value: 'spenderdsc', text: '▼ Spender' },
             { value: 'tokensasc', text: '▲ Tokens' },
             { value: 'tokensdsc', text: '▼ Tokens' },
-          ],
-          erc721And1155TokensSortOptions: [
-            { value: 'txorderasc', text: '▲ Latest Update' },
-            { value: 'txorderdsc', text: '▼ Latest Update' },
-            { value: 'tokenidasc', text: '▲ Token Id, ▲ Owner' },
-            { value: 'tokeniddsc', text: '▼ Token Id, ▲ Owner' },
-            { value: 'ownerasc', text: '▲ Owner, ▲ Token Id' },
-            { value: 'ownerdsc', text: '▼ Owner, ▲ Token Id' },
           ],
           erc721And1155ApprovalForAllsSortOptions: [
             { value: 'txorderasc', text: '▲ Latest Update' },
@@ -1591,6 +1666,18 @@
             { key: 'fromOwner', label: 'From / Owner', sortable: false, thStyle: 'width: 15%;', tdClass: 'text-truncate' },
             { key: 'toSpenderOperator', label: 'To / Spender / Operator', sortable: false, thStyle: 'width: 15%;', tdClass: 'text-truncate' },
             { key: 'tokensTokenId', label: 'Tokens / Token Id', sortable: false, thStyle: 'width: 25%;', thClass: 'text-right', tdClass: 'text-right' },
+          ],
+          tokensFieldsFungible: [
+            { key: 'number', label: '#', sortable: false, thStyle: 'width: 5%;', tdClass: 'text-truncate' },
+            { key: 'latestUpdate', label: 'Latest Update', sortable: false, thStyle: 'width: 30%;', thClass: 'text-left', tdClass: 'text-left' },
+            { key: 'owner', label: 'Owner', sortable: false, thStyle: 'width: 35%;', thClass: 'text-left', tdClass: 'text-left' },
+            { key: 'tokens', label: 'Tokens', sortable: false, thStyle: 'width: 30%;', thClass: 'text-right', tdClass: 'text-right' },
+          ],
+          tokensFieldsNonFungible: [
+            { key: 'number', label: '#', sortable: false, thStyle: 'width: 5%;', tdClass: 'text-truncate' },
+            { key: 'latestUpdate', label: 'Latest Update', sortable: false, thStyle: 'width: 30%;', thClass: 'text-left', tdClass: 'text-left' },
+            { key: 'tokenId', label: 'Token Id', sortable: false, thStyle: 'width: 30%;', thClass: 'text-right', tdClass: 'text-right' },
+            { key: 'owners', label: 'Owner(s)', sortable: false, thStyle: 'width: 35%;', thClass: 'text-left', tdClass: 'text-left' },
           ],
 
           erc20EventsFields: [
@@ -1694,7 +1781,7 @@
 
           // --- Explorer: ---
           filterRegexes() {
-            console.log(now() + " INFO filterRegexes - this.settings.filter: " + this.settings.filter);
+            console.log(now() + " INFO filterRegexes: " + this.settings.filter + "/" + this.settings.tokenIdFilter + "/" + this.settings.blockTxHashFilter);
             let regex = null;
             if (this.settings.filter != null && this.settings.filter.length > 0) {
               try {
@@ -1722,12 +1809,12 @@
                 blockTxHashRegex = new RegExp(/thequickbrowndogjumpsoverthelazyfox/, 'i');
               }
             }
-            return [ regex, tokenIdRegex, blockTxHashRegex ];
+            return { regex, tokenIdRegex, blockTxHashRegex };
           },
           sortedFilteredEvents() {
             // console.log(now() + " sortedFilteredEvents");
             const results = [];
-            const [ regex, tokenIdRegex, blockTxHashRegex ] = this.filterRegexes;
+            const { regex, tokenIdRegex, blockTxHashRegex } = this.filterRegexes;
             for (const event of this.events) {
               let include = true;
               if (regex) {
@@ -1788,62 +1875,148 @@
           },
 
           sortedFilteredTokens() {
-            // TODO
-            // console.log(now() + " sortedFilteredTokens - this.settings.erc20.eventsTable: " + JSON.stringify(this.settings.erc20.eventsTable));
+            console.log(now() + " sortedFilteredTokens");
             const results = [];
-            const [ regex, tokenIdRegex, blockTxHashRegex ] = this.filterRegexes;
-            for (const event of this.events) {
+            const { regex, tokenIdRegex, blockTxHashRegex } = this.filterRegexes;
+            for (const item of this.tokens) {
               let include = true;
               if (regex) {
-                if (event.type == "Transfer") {
-                  if (event.eventType == "erc721") {
-                    if (!(regex.test(event.from) || regex.test(event.to) || regex.test(event.txHash) || regex.test(event.blockNumber.toString()) || regex.test(event.tokenId.toString()))) {
-                      include = false;
-                    }
-                  } else {
-                    if (!(regex.test(event.from) || regex.test(event.to) || regex.test(event.txHash) || regex.test(event.blockNumber.toString()))) {
-                      include = false;
-                    }
-                  }
-                } else if (event.type == "TransferSingle") {
-                  if (!(regex.test(event.from) || regex.test(event.to) || regex.test(event.txHash) || regex.test(event.blockNumber.toString()) || regex.test(event.tokenId.toString()))) {
-                    include = false;
-                  }
-                } else if (event.type == "TransferBatch") {
-                  // TODO: Scan tokenIds
-                  if (!(regex.test(event.from) || regex.test(event.to) || regex.test(event.txHash) || regex.test(event.blockNumber.toString()))) {
-                    include = false;
-                  }
-                } else if (event.type == "Approval") {
-                  if (!(regex.test(event.owner) || regex.test(event.spender) || regex.test(event.txHash) || regex.test(event.blockNumber))) {
-                    include = false;
-                  }
-                } else if (event.type == "ApprovalForAll") {
-                  if (!(regex.test(event.owner) || regex.test(event.operator) || regex.test(event.txHash) || regex.test(event.blockNumber))) {
-                    include = false;
-                  }
+                if (!(regex.test(item.owner))) {
+                  include = false;
+                }
+              }
+              if (tokenIdRegex && (this.type == "erc721" || this.type == "erc1155")) {
+                if (!(tokenIdRegex.test(item.tokenId))) {
+                  include = false;
+                }
+              }
+              if (blockTxHashRegex) {
+                if (!(blockTxHashRegex.test(item.txHash) || blockTxHashRegex.test(item.blockNumber))) {
+                  include = false;
                 }
               }
               if (include) {
-                results.push(event);
+                results.push(item);
               }
             }
-            if (this.settings.eventsTable.sortOption == "txorderasc") {
-              results.sort((a, b) => {
-                if (a.blockNumber == b.blockNumber) {
-                  return a.logIndex - b.logIndex;
-                } else {
-                  return a.blockNumber - b.blockNumber;
-                }
-              });
-            } else if (this.settings.eventsTable.sortOption == "txorderdsc") {
-              results.sort((a, b) => {
-                if (a.blockNumber == b.blockNumber) {
-                  return b.logIndex - a.logIndex;
-                } else {
-                  return b.blockNumber - a.blockNumber;
-                }
-              });
+            if (this.type == "erc20") {
+              if (this.settings.tokensTable.sortOptionERC20 == "txorderasc") {
+                results.sort((a, b) => {
+                  if (a.blockNumber == b.blockNumber) {
+                    return a.logIndex - b.logIndex;
+                  } else {
+                    return a.blockNumber - b.blockNumber;
+                  }
+                });
+              } else if (this.settings.tokensTable.sortOptionERC20 == "txorderdsc") {
+                results.sort((a, b) => {
+                  if (a.blockNumber == b.blockNumber) {
+                    return b.logIndex - a.logIndex;
+                  } else {
+                    return b.blockNumber - a.blockNumber;
+                  }
+                });
+              } else if (this.settings.tokensTable.sortOptionERC20 == "ownerasc") {
+                results.sort((a, b) => {
+                  return ('' + a.owner).localeCompare(b.owner);
+                });
+              } else if (this.settings.tokensTable.sortOptionERC20 == "ownerdsc") {
+                results.sort((a, b) => {
+                  return ('' + b.owner).localeCompare(a.owner);
+                });
+              } else if (this.settings.tokensTable.sortOptionERC20 == "balanceasc") {
+                results.sort((a, b) => {
+                  return a.tokens - b.tokens;
+                });
+              } else if (this.settings.tokensTable.sortOptionERC20 == "balancedsc") {
+                results.sort((a, b) => {
+                  return b.tokens - a.tokens;
+                });
+              }
+            } else if (this.type == "erc721") {
+              if (this.settings.tokensTable.sortOptionERC721 == "txorderasc") {
+                results.sort((a, b) => {
+                  if (a.blockNumber == b.blockNumber) {
+                    return a.logIndex - b.logIndex;
+                  } else {
+                    return a.blockNumber - b.blockNumber;
+                  }
+                });
+              } else if (this.settings.tokensTable.sortOptionERC721 == "txorderdsc") {
+                results.sort((a, b) => {
+                  if (a.blockNumber == b.blockNumber) {
+                    return b.logIndex - a.logIndex;
+                  } else {
+                    return b.blockNumber - a.blockNumber;
+                  }
+                });
+              } else if (this.settings.tokensTable.sortOptionERC721 == "tokenidasc") {
+                results.sort((a, b) => {
+                  return a.tokenId - b.tokenId;
+                });
+              } else if (this.settings.tokensTable.sortOptionERC721 == "tokeniddsc") {
+                results.sort((a, b) => {
+                  return b.tokenId - a.tokenId;
+                });
+              } else if (this.settings.tokensTable.sortOptionERC721 == "ownerasc") {
+                results.sort((a, b) => {
+                  return ('' + a.owner).localeCompare(b.owner);
+                });
+              } else if (this.settings.tokensTable.sortOptionERC721 == "ownerdsc") {
+                results.sort((a, b) => {
+                  return ('' + b.owner).localeCompare(a.owner);
+                });
+              }
+            } else if (this.type == "erc1155") {
+              if (this.settings.tokensTable.sortOptionERC1155 == "txorderasc") {
+                results.sort((a, b) => {
+                  if (a.blockNumber == b.blockNumber) {
+                    return a.logIndex - b.logIndex;
+                  } else {
+                    return a.blockNumber - b.blockNumber;
+                  }
+                });
+              } else if (this.settings.tokensTable.sortOptionERC1155 == "txorderdsc") {
+                results.sort((a, b) => {
+                  if (a.blockNumber == b.blockNumber) {
+                    return b.logIndex - a.logIndex;
+                  } else {
+                    return b.blockNumber - a.blockNumber;
+                  }
+                });
+              } else if (this.settings.tokensTable.sortOptionERC1155 == "tokenidasc") {
+                results.sort((a, b) => {
+                  if (a.tokenId == b.tokenId) {
+                    return ('' + a.owner).localeCompare(b.owner);
+                  } else {
+                    return a.tokenId - b.tokenId;
+                  }
+                });
+              } else if (this.settings.tokensTable.sortOptionERC1155 == "tokeniddsc") {
+                results.sort((a, b) => {
+                  if (a.tokenId == b.tokenId) {
+                    return ('' + a.owner).localeCompare(b.owner);
+                  } else {
+                    return b.tokenId - a.tokenId;
+                  }
+                });
+              } else if (this.settings.tokensTable.sortOptionERC1155 == "ownerasc") {
+                results.sort((a, b) => {
+                  if (('' + a.owner).localeCompare(b.owner) == 0) {
+                    return a.tokenId - b.tokenId;
+                  } else {
+                    return ('' + a.owner).localeCompare(b.owner);
+                  }
+                });
+              } else if (this.settings.tokensTable.sortOptionERC1155 == "ownerdsc") {
+                results.sort((a, b) => {
+                  if (('' + a.owner).localeCompare(b.owner) == 0) {
+                    return a.tokenId - b.tokenId;
+                  } else {
+                    return ('' + b.owner).localeCompare(a.owner);
+                  }
+                });
+              }
             }
             return results;
           },
@@ -1855,7 +2028,7 @@
             // TODO
             // console.log(now() + " sortedFilteredApprovals - this.settings.erc20.eventsTable: " + JSON.stringify(this.settings.erc20.eventsTable));
             const results = [];
-            const [ regex, tokenIdRegex, blockTxHashRegex ] = this.filterRegexes;
+            const { regex, tokenIdRegex, blockTxHashRegex } = this.filterRegexes;
             for (const event of this.events) {
               let include = true;
               if (regex) {
@@ -1919,7 +2092,7 @@
             // TODO
             // console.log(now() + " sortedFilteredApprovalForAlls - this.settings.erc20.eventsTable: " + JSON.stringify(this.settings.erc20.eventsTable));
             const results = [];
-            const [ regex, tokenIdRegex, blockTxHashRegex ] = this.filterRegexes;
+            const { regex, tokenIdRegex, blockTxHashRegex } = this.filterRegexes;
             for (const event of this.events) {
               let include = true;
               if (regex) {
@@ -3860,7 +4033,7 @@
             return n && !isNaN(n) || false;
           },
           saveSettings() {
-            console.log(now() + " saveSettings: " + JSON.stringify(this.settings, null, 2));
+            // console.log(now() + " saveSettings: " + JSON.stringify(this.settings, null, 2));
             localStorage.tokenExplorerSettings = JSON.stringify(this.settings);
           },
           async processNewBlock(blockNumber) {
