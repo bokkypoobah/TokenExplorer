@@ -137,7 +137,7 @@
 
             <!-- Explorer: -->
             <b-card v-if="settings.tabIndex == 1" no-header body-class="m-1 p-1" class="m-0 p-0 border-0">
-              <b-form-group label="contract:" label-for="explorer-contract" label-size="lg" label-class="font-weight-bold pt-0" label-cols-sm="2" label-align-sm="right" :state="!settings.contract || validAddress(settings.contract)" :invalid-feedback="'Invalid address'" :description="erc20Description" class="mx-0 my-1 p-0">
+              <b-form-group label="contract:" label-for="explorer-contract" label-size="lg" label-class="font-weight-bold pt-0" label-cols-sm="2" label-align-sm="right" :state="!settings.contract || validAddress(settings.contract)" :invalid-feedback="'Invalid address'" :description="description" class="mx-0 my-1 p-0">
                 <b-input-group size="sm" class="w-50">
                   <b-form-input type="text" size="sm" id="explorer-contract" v-model="settings.contract" @change="saveSettings" placeholder="Enter token contract address, or select from dropdown"></b-form-input>
                   <b-input-group-append>
@@ -1252,6 +1252,15 @@
             },
             version: 0,
           },
+
+          type: null,
+          symbol: null,
+          name: null,
+          decimals: null,
+          totalSupply: null,
+          description: null,
+
+          // TODO Delete below eventually
           erc20: {
             symbol: null,
             name: null,
@@ -2344,52 +2353,84 @@
             const latestBlockNumber = parseInt(block.number);
             const timestamp = parseInt(block.timestamp);
 
-            let [ type, supportsERC721, supportsERC1155, supportsERC20 ] = [ null, false, false, false ];
-            let [ symbol, name, decimals, totalSupply ] = [ null, null, null, null ];
+            let [ supportsERC721, supportsERC1155, supportsERC20 ] = [ false, false, false ];
+            [ this.type, this.symbol, this.name, this.decimals, this.totalSupply, this.description ] = [ null, null, null, null, null, null ];
             try {
               supportsERC721 = await erc165.supportsInterface(ERC721_INTERFACE);
             } catch (e) {
-              console.log(now() + " INFO retrieveEvents - supportsInterface(ERC721): " + e.message);
+              // console.log(now() + " INFO retrieveEvents - supportsInterface(ERC721): " + e.message);
             }
-            console.log(now() + " retrieveEvents - supportsERC721: " + supportsERC721);
-            if (!supportsERC721) {
+            // console.log(now() + " retrieveEvents - supportsERC721: " + supportsERC721);
+            if (supportsERC721) {
+              this.type = "erc721";
+              try {
+                this.symbol = await erc721.symbol();
+                // console.log(now() + " retrieveEvents - this.symbol: " + this.symbol);
+              } catch (e) {
+                // console.log(now() + " INFO retrieveEvents - erc721.symbol(): " + e.message);
+              }
+            } else {
               try {
                 supportsERC1155 = await erc165.supportsInterface(ERC1155_INTERFACE);
+                if (supportsERC1155) {
+                  this.type = "erc1155";
+                }
               } catch (e) {
-                console.log(now() + " INFO retrieveEvents - supportsInterface(ERC1155): " + e.message);
+                // console.log(now() + " INFO retrieveEvents - supportsInterface(ERC1155): " + e.message);
               }
             }
-            console.log(now() + " retrieveEvents - supportsERC1155: " + supportsERC1155);
+            // console.log(now() + " retrieveEvents - supportsERC1155: " + supportsERC1155);
             if (!supportsERC721 && !supportsERC721) {
               try {
-                decimals = parseInt(await erc20.decimals());
-                console.log(now() + " retrieveEvents - decimals: " + decimals);
+                this.decimals = parseInt(await erc20.decimals());
+                // console.log(now() + " retrieveEvents - this.decimals: " + this.decimals);
               } catch (e) {
-                console.log(now() + " INFO retrieveEvents - erc20.decimals(): " + e.message);
+                // console.log(now() + " INFO retrieveEvents - erc20.decimals(): " + e.message);
               }
               try {
-                totalSupply = (await erc20.totalSupply()).toString();
-                console.log(now() + " retrieveEvents - totalSupply: " + totalSupply);
+                this.totalSupply = (await erc20.totalSupply()).toString();
+                // console.log(now() + " retrieveEvents - this.totalSupply: " + this.totalSupply);
               } catch (e) {
-                console.log(now() + " INFO retrieveEvents - erc20.totalSupply(): " + e.message);
+                // console.log(now() + " INFO retrieveEvents - erc20.totalSupply(): " + e.message);
               }
-              if (decimals && totalSupply) {
+              if (this.decimals && this.totalSupply) {
+                this.type = "erc20";
                 supportsERC20 = true;
                 try {
-                  symbol = await erc20.symbol();
-                  console.log(now() + " retrieveEvents - symbol: " + symbol);
+                  this.symbol = await erc20.symbol();
+                  // console.log(now() + " retrieveEvents - this.symbol: " + this.symbol);
                 } catch (e) {
-                  console.log(now() + " INFO retrieveEvents - erc20.symbol(): " + e.message);
+                  // console.log(now() + " INFO retrieveEvents - erc20.symbol(): " + e.message);
                 }
                 try {
-                  name = await erc20.name();
-                  console.log(now() + " retrieveEvents - name: " + name);
+                  this.name = await erc20.name();
+                  // console.log(now() + " retrieveEvents - this.name: " + this.name);
                 } catch (e) {
-                  console.log(now() + " INFO retrieveEvents - erc20.name(): " + e.message);
+                  // console.log(now() + " INFO retrieveEvents - erc20.name(): " + e.message);
                 }
               }
             }
+            if (this.type == "erc20") {
+              this.description = "ERC-20 " + this.symbol + " " + this.name + " " + this.decimals + " " + this.formatDecimals(this.totalSupply, this.decimals);
+            } else if (this.type == "erc721") {
+              this.description = "ERC-721 " + this.symbol;
+            } else if (this.type == "erc1155") {
+              this.description = "ERC-1155";
+            } else {
+              this.description = "Not a token contract";
+            }
             console.log(now() + " retrieveEvents - ERC-20: " + supportsERC20 + ", ERC-721: " + supportsERC721 + ", ERC-1155: " + supportsERC1155);
+            console.log(now() + " retrieveEvents - this.type: " + this.type);
+            console.log(now() + " retrieveEvents - this.symbol: " + this.symbol);
+            console.log(now() + " retrieveEvents - this.description: " + this.description);
+
+            // type: null,
+            // symbol: null,
+            // name: null,
+            // decimals: null,
+            // totalSupply: null,
+            // description: null,
+
 
           },
 
