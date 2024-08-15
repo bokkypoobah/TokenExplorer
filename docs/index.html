@@ -138,11 +138,12 @@
 
             <!-- Explorer: -->
             <b-card v-if="settings.tabIndex == 1" no-header body-class="m-1 p-1" class="m-0 p-0 border-0">
-              <b-form-group label="contract:" label-for="explorer-contract" label-size="lg" label-class="font-weight-bold pt-0" label-cols-sm="2" label-align-sm="right" :state="!settings.contract || validAddress(settings.contract)" :invalid-feedback="'Invalid address'" :description="description" class="mx-0 my-1 p-0">
+
+              <!-- <b-form-group label="contract:" label-for="explorer-contract" label-size="lg" label-class="font-weight-bold pt-0" label-cols-sm="2" label-align-sm="right" :state="!settings.contract || validAddress(settings.contract)" :invalid-feedback="'Invalid address'" :description="description" class="mx-0 my-1 p-0"> -->
                 <!-- <template v-slot:description>
                   {{ description }}
                 </template> -->
-                <b-input-group size="sm" class="w-50">
+                <!-- <b-input-group size="sm" class="w-50">
                   <b-form-input type="text" size="sm" id="explorer-contract" v-model="settings.contract" @change="saveSettings" placeholder="Enter token contract address, or select from dropdown"></b-form-input>
                   <b-input-group-append>
                     <b-button size="sm" :disabled="!validAddress(settings.contract)" @click="retrieveEvents" variant="primary">Retrieve</b-button>
@@ -155,10 +156,40 @@
                     <b-button :disabled="!settings.contract || !validAddress(settings.contract)" @click="copyToClipboard(settings.contract);" variant="link" v-b-popover.hover.ds500="'Copy ERC-20 contract address to clipboard'" class="m-0 ml-3 p-0"><b-icon-clipboard shift-v="+1" font-scale="1.1"></b-icon-clipboard></b-button>
                     <b-button size="sm" :disabled="!validAddress(settings.contract)" :href="explorer + 'token/' + settings.contract + '#code'" variant="link" v-b-popover.hover.ds500="'View in explorer'" target="_blank" class="m-0 ml-2 p-0"><b-icon-link45deg shift-v="-4" font-scale="1.1"></b-icon-link45deg></b-button>
                   </b-input-group-append>
-                </b-input-group>
-              </b-form-group>
+                </b-input-group> -->
+              <!-- </b-form-group> -->
 
-              <b-form-group label="events:" label-size="lg" label-class="font-weight-bold pt-0" label-cols-sm="2" label-align-sm="right" class="mx-0 mt-3 mb-1 p-0">
+              <b-tabs v-model="settings.tableIndex" @changed="saveSettings();" content-class="mt-2" align="left">
+                <template #tabs-start>
+                  <b-input-group size="sm" class="w-50">
+                    <b-form-input type="text" size="sm" id="explorer-contract" v-model="settings.contract" @change="saveSettings" placeholder="Enter token contract address, or select from dropdown"></b-form-input>
+                    <b-input-group-append>
+                      <div>
+                        <b-dropdown size="sm" id="dropdown-left" text="" variant="link" v-b-popover.hover.ds500="'Some sample token contracts'" class="m-0 ml-1 p-0">
+                          <b-dropdown-item v-if="sampleContracts('all').length == 0" disabled>No sample contracts on this network</b-dropdown-item>
+                          <div v-for="(item, index) of sampleContracts('all')" v-bind:key="index">
+                            <b-dropdown-item @click="settings.contract = item.contract; saveSettings();">{{ index }}. {{ item.type.replace(/erc/, 'ERC-') }} {{ item.contract.substring(0, 8) + '...' + item.contract.slice(-6) + ' ' + item.name }}</b-dropdown-item>
+                          </div>
+                        </b-dropdown>
+                        <b-button size="sm" :disabled="!validAddress(settings.contract)" @click="retrieveEvents" variant="primary">Retrieve</b-button>
+                        <!-- <b-button :disabled="!settings.contract || !validAddress(settings.contract)" @click="copyToClipboard(settings.contract);" variant="link" v-b-popover.hover.ds500="'Copy ERC-20 contract address to clipboard'" class="m-0 ml-2 p-0"><b-icon-clipboard shift-v="+1" font-scale="1.1"></b-icon-clipboard></b-button> -->
+                        <!-- <b-button size="sm" :disabled="!validAddress(settings.contract)" :href="explorer + 'token/' + settings.contract + '#code'" variant="link" v-b-popover.hover.ds500="'View in explorer'" target="_blank" class="m-0 ml-2 mr-2 p-0"><b-icon-link45deg shift-v="-1" font-scale="1.2"></b-icon-link45deg></b-button> -->
+                      </div>
+                    </b-input-group-append>
+                  </b-input-group>
+                  <div>
+                    <b-badge pill variant="light" v-b-popover.hover.ds500="decimals && totalSupply && (name + ' ' + decimals + ' ' + formatDecimals(totalSupply, decimals)) || ''" style="min-width: 5.0rem; max-width: 15.0rem;" class="mt-2 ml-2 mr-4">
+                      {{ (type && (type.replace(/erc/, "ERC-")) || '') + ((symbol && (': ' + symbol)) || '') }}
+                    </b-badge>
+                  </div>
+                </template>
+                <b-tab title="Events" active></b-tab>
+                <b-tab :title="(type == 'erc721' || type == 'erc1155') ? 'Tokens' : 'Balances'"></b-tab>
+                <b-tab title="Approvals"></b-tab>
+                <b-tab title="ApprovalForAlls"></b-tab>
+              </b-tabs>
+
+              <div v-if="settings.tableIndex == 0">
                 <div class="d-flex flex-wrap m-0 p-0">
                   <div class="mt-0 pr-1" style="width: 20.0rem;">
                     <b-form-input type="text" size="sm" v-model.trim="settings.filter" @change="saveSettings" debounce="600" placeholder="🔍 address/blocknumber/txhash/tokenid regex"></b-form-input>
@@ -270,16 +301,36 @@
                       </span>
                     </div>
                     <div v-else-if="data.item.type == 'Approval'">
-                      <b-badge pill @click="viewNonFungible(type, settings.contract, data.item.tokenId)" v-b-popover.hover.ds500="'Click to view token'" variant="info">
-                        {{ data.item.tokenId }}
-                      </b-badge>
+                      <div v-if="data.item.eventType == 'erc20'">
+                        <font size="-2" class="text-muted">
+                          {{ formatNumber(data.item.tokens) }}
+                        </font>
+                        {{ formatDecimals(data.item.tokens, decimals) }}
+                      </div>
+                      <div v-else>
+                        <b-badge pill @click="viewNonFungible(type, settings.contract, data.item.tokenId)" v-b-popover.hover.ds500="'Click to view token'" variant="info">
+                          {{ data.item.tokenId }}
+                        </b-badge>
+                      </div>
                     </div>
                     <div v-else-if="data.item.type == 'ApprovalForAll'">
                       {{ data.item.approved }}
                     </div>
                   </template>
                 </b-table>
-              </b-form-group>
+              </div>
+
+              <div v-if="settings.tableIndex == 1">
+                Holdings
+              </div>
+
+              <div v-if="settings.tableIndex == 2">
+                Approvals
+              </div>
+
+              <div v-if="settings.tableIndex == 3">
+                ApprovalForAlls
+              </div>
 
             </b-card>
 
@@ -1639,6 +1690,15 @@
                       include = false;
                     }
                   }
+                } else if (event.type == "TransferSingle") {
+                  if (!(regex.test(event.from) || regex.test(event.to) || regex.test(event.txHash) || regex.test(event.blockNumber.toString()) || regex.test(event.tokenId.toString()))) {
+                    include = false;
+                  }
+                } else if (event.type == "TransferBatch") {
+                  // TODO: Scan tokenIds
+                  if (!(regex.test(event.from) || regex.test(event.to) || regex.test(event.txHash) || regex.test(event.blockNumber.toString()))) {
+                    include = false;
+                  }
                 } else if (event.type == "Approval") {
                   if (!(regex.test(event.owner) || regex.test(event.spender) || regex.test(event.txHash) || regex.test(event.blockNumber))) {
                     include = false;
@@ -2512,7 +2572,7 @@
             try {
               this.modalNonFungible.logs.push({ log:now() + " Fetching '" + uriResults + "'" });
               try {
-                const fileContent = await fetch(uriResults, { mode: 'cors', signal: AbortSignal.timeout(10000) }).then(response => response.json());
+                const fileContent = await fetch(uriResults, { mode: 'cors', signal: AbortSignal.timeout(20000) }).then(response => response.json());
                 this.modalNonFungible.logs.push({ log:now() + " Fetched '" + JSON.stringify(fileContent, null, 2) + "'" });
                 console.log(now() + " retrieveERC20 viewNonFungible - fileContent: '" + JSON.stringify(fileContent, null, 2) + "'");
 
