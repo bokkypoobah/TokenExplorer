@@ -159,7 +159,7 @@
                       <b-button size="sm" :disabled="!validAddress(settings.contract)" :href="explorer + 'token/' + settings.contract + '#code'" variant="link" v-b-popover.hover.ds500="'View in explorer'" target="_blank" class="m-0 ml-2 mr-2 p-0"><b-icon-link45deg shift-v="-1" font-scale="1.2"></b-icon-link45deg></b-button>
                     </div>
                     <div class="mt-0 pr-1">
-                      <b-button size="sm" :disabled="sync.records != null || !validAddress(settings.contract)" @click="retrieveEvents" variant="primary">Retrieve</b-button>
+                      <b-button size="sm" :disabled="sync.completed != null || !validAddress(settings.contract)" @click="retrieveEvents" variant="primary">Retrieve</b-button>
                     </div>
                     <!-- <div class="mt-0 pr-1">
                       <b-button :disabled="!settings.contract || !validAddress(settings.contract)" @click="copyToClipboard(settings.contract);" variant="link" v-b-popover.hover.ds500="'Copy ERC-20 contract address to clipboard'" class="m-0 ml-2 p-0"><b-icon-clipboard shift-v="+1" font-scale="1.1"></b-icon-clipboard></b-button>
@@ -219,7 +219,7 @@
                 </div>
                 <div class="mt-0 flex-grow-1">
                 </div>
-                <div v-if="sync.records == null" class="mt-0 pr-1">
+                <div v-if="sync.completed == null" class="mt-0 pr-1">
                   <div v-if="settings.tableIndex == 0">
                     <b-button size="sm" :disabled="pagedSortedFilteredEvents == 0" @click="retrieveTimestamps(pagedSortedFilteredEvents.map(e => e.blockNumber))" variant="link" v-b-popover.hover.ds500="'Retrieve timestamps for events below'"><b-icon-clock-history shift-v="+1" font-scale="1.2"></b-icon-clock-history></b-button>
                   </div>
@@ -233,18 +233,18 @@
                     <b-button size="sm" :disabled="pagedSortedFilteredApprovalForAlls == 0" @click="retrieveTimestamps(pagedSortedFilteredApprovalForAlls.map(e => e.blockNumber))" variant="link" v-b-popover.hover.ds500="'Retrieve timestamps for allowances below'"><b-icon-clock-history shift-v="+1" font-scale="1.2"></b-icon-clock-history></b-button>
                   </div>
                 </div>
-                <div v-if="sync.records == null" class="mt-0 pr-1">
+                <div v-if="sync.completed == null" class="mt-0 pr-1">
                   <!-- <b-button size="sm" :disabled="pagedSortedFilteredEvents == 0" @click="retrieveMetadata" variant="link" v-b-popover.hover.ds500="'Retrieve NFT metadata from Reservoir'"><b-icon-cloud-download shift-v="+1" font-scale="1.2"></b-icon-cloud-download></b-button> -->
                   <b-button size="sm" :disabled="!validAddress(settings.contract)" @click="retrieveMetadata" variant="link" v-b-popover.hover.ds500="'Retrieve NFT metadata from Reservoir'"><b-icon-cloud-download shift-v="+1" font-scale="1.2"></b-icon-cloud-download></b-button>
                 </div>
-                <div v-if="sync.records != null" class="mt-1" style="width: 300px;">
-                  <b-progress height="1.5rem" :max="sync.total" show-progress :animated="sync.records != null" variant="success" v-b-popover.hover.ds500="'Click the button on the right to stop'">
+                <div v-if="sync.completed != null" class="mt-1" style="width: 300px;">
+                  <b-progress height="1.5rem" :max="sync.total" show-progress :animated="sync.completed != null" variant="success" v-b-popover.hover.ds500="'Click the button on the right to stop'">
                     <b-progress-bar :value="sync.completed">
-                      {{ sync.total == null ? (formatNumber(sync.completed) + ' ' + formatNumber(sync.records)) : (formatNumber(sync.completed) + '/' + formatNumber(sync.total) + ' ' + ((sync.completed / sync.total) * 100).toFixed(0) + '% ' + formatNumber(sync.records)) }}
+                      {{ sync.total == null ? (formatNumber(sync.completed) + (sync.records && (' ' + formatNumber(sync.records)) || '')) : (formatNumber(sync.completed) + '/' + formatNumber(sync.total) + ' ' + ((sync.completed / sync.total) * 100).toFixed(0) + '% ' + formatNumber(sync.records)) }}
                     </b-progress-bar>
                   </b-progress>
                 </div>
-                <div v-if="sync.records != null" class="mt-0 pl-1">
+                <div v-if="sync.completed != null" class="mt-0 pl-1">
                   <b-button size="sm" :disabled="sync.halt" @click="sync.halt = true;" variant="link" v-b-popover.hover.ds500="'Click to stop'"><b-icon-stop-fill shift-v="-2" font-scale="1.0"></b-icon-stop-fill></b-button>
                 </div>
                 <div class="mt-0 flex-grow-1">
@@ -1915,33 +1915,43 @@
             console.log(now() + " INFO retrieveMetadata BEGIN - settings: " + JSON.stringify(this.settings));
             const reservoirPrefix = this.network && this.network.reservoir || null;
             console.log(now() + " INFO retrieveMetadata - reservoirPrefix: " + reservoirPrefix);
-            const metadata = {};
-            metadata[this.settings.contract] = {};
-            let continuation = null;
-            do {
-              let url = reservoirPrefix + "tokens/v7?collection=" + this.settings.contract;
-              url = url + (continuation != null ? "&continuation=" + continuation : '');
-              // url = url + "&sortBy=updatedAt&limit=1000&includeAttributes=true&includeLastSale=true";
-              url = url + "&sortBy=updatedAt&limit=1000&includeAttributes=true&includeLastSale=true";
-              console.log(url);
-              const data = await fetch(url).then(response => response.json());
-              continuation = data.continuation;
-              if (data.tokens) {
-                for (let record of data.tokens) {
-                  const token = parseReservoirTokenData(record);
-                  metadata[this.settings.contract][token.tokenId] = {
-                    name: token.name,
-                    // description: token.description,
-                    image: token.image,
-                    attributes: token.attributes,
-                  };
+            if (reservoirPrefix) {
+              this.sync.total = null;
+              this.sync.completed = 0;
+              // this.sync.records = 0;
+              const metadata = {};
+              metadata[this.settings.contract] = {};
+              let continuation = null;
+              do {
+                let url = reservoirPrefix + "tokens/v7?collection=" + this.settings.contract;
+                url = url + (continuation != null ? "&continuation=" + continuation : '');
+                url = url + "&sortBy=updatedAt&limit=1000&includeAttributes=true&includeLastSale=true";
+                console.log(url);
+                const data = await fetch(url).then(response => response.json());
+                continuation = data.continuation;
+                if (data.tokens) {
+                  this.sync.completed += data.tokens.length;
+                  // this.sync.records += data.tokens.length;
+                  this.$forceUpdate();
+                  for (let record of data.tokens) {
+                    const token = parseReservoirTokenData(record);
+                    metadata[this.settings.contract][token.tokenId] = {
+                      name: token.name,
+                      // description: token.description,
+                      image: token.image,
+                      attributes: token.attributes,
+                    };
+                  }
                 }
-              }
-            } while (continuation != null);
-            Vue.set(this.metadata, this.chainId, metadata);
-            // console.log(JSON.stringify(metadata, null, 2));
-            // console.log(now() + " INFO retrieveMetadata - this.metadata: " + JSON.stringify(this.metadata, null, 2));
-            localStorage.tokenExplorerMetadata = JSON.stringify(this.metadata);
+              } while (continuation != null && !this.sync.halt);
+              // this.sync.records = null;
+              this.sync.total = null;
+              this.sync.completed = null;
+              this.sync.halt = false;
+              Vue.set(this.metadata, this.chainId, metadata);
+              // console.log(now() + " INFO retrieveMetadata - this.metadata: " + JSON.stringify(this.metadata, null, 2));
+              localStorage.tokenExplorerMetadata = JSON.stringify(this.metadata);
+            }
           },
 
           async retrieveERC20BalanceOf() {
@@ -2169,7 +2179,7 @@
           }
           if ('tokenExplorerMetadata' in localStorage) {
             this.metadata = JSON.parse(localStorage.tokenExplorerMetadata);
-            console.log(now() + " mounted - this.metadata: " + JSON.stringify(this.metadata));
+            // console.log(now() + " mounted - this.metadata: " + JSON.stringify(this.metadata));
           }
           if ('tokenExplorerSettings' in localStorage) {
             const tempSettings = JSON.parse(localStorage.tokenExplorerSettings);
