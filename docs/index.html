@@ -24,6 +24,7 @@
     <script src="deploymentData.js"></script>
     <script src="networks.js"></script>
     <script src="parseEventLogs.js"></script>
+    <script src="parseReservoirTokenData.js"></script>
 
     <link rel="apple-touch-icon" sizes="180x180" href="images/apple-touch-icon.png">
     <link rel="icon" type="image/png" sizes="32x32" href="images/favicon-32x32.png">
@@ -231,6 +232,10 @@
                   <div v-else-if="settings.tableIndex == 3">
                     <b-button size="sm" :disabled="pagedSortedFilteredApprovalForAlls == 0" @click="retrieveTimestamps(pagedSortedFilteredApprovalForAlls.map(e => e.blockNumber))" variant="link" v-b-popover.hover.ds500="'Retrieve timestamps for allowances below'"><b-icon-clock-history shift-v="+1" font-scale="1.2"></b-icon-clock-history></b-button>
                   </div>
+                </div>
+                <div v-if="sync.records == null" class="mt-0 pr-1">
+                  <!-- <b-button size="sm" :disabled="pagedSortedFilteredEvents == 0" @click="retrieveMetadata" variant="link" v-b-popover.hover.ds500="'Retrieve NFT metadata from Reservoir'"><b-icon-cloud-download shift-v="+1" font-scale="1.2"></b-icon-cloud-download></b-button> -->
+                  <b-button size="sm" :disabled="!validAddress(settings.contract)" @click="retrieveMetadata" variant="link" v-b-popover.hover.ds500="'Retrieve NFT metadata from Reservoir'"><b-icon-cloud-download shift-v="+1" font-scale="1.2"></b-icon-cloud-download></b-button>
                 </div>
                 <div v-if="sync.records != null" class="mt-1" style="width: 300px;">
                   <b-progress height="1.5rem" :max="sync.total" show-progress :animated="sync.records != null" variant="success" v-b-popover.hover.ds500="'Click the button on the right to stop'">
@@ -889,6 +894,7 @@
             logs: [],
           },
           timestamps: {},
+          metadata: {},
           sync: {
             section: null,
             total: null,
@@ -1905,6 +1911,39 @@
             Vue.set(this, 'approvals', []);
           },
 
+          async retrieveMetadata() {
+            console.log(now() + " INFO retrieveMetadata BEGIN - settings: " + JSON.stringify(this.settings));
+            const reservoirPrefix = this.network && this.network.reservoir || null;
+            console.log(now() + " INFO retrieveMetadata - reservoirPrefix: " + reservoirPrefix);
+            const metadata = {};
+            metadata[this.settings.contract] = {};
+            let continuation = null;
+            do {
+              let url = reservoirPrefix + "tokens/v7?collection=" + this.settings.contract;
+              url = url + (continuation != null ? "&continuation=" + continuation : '');
+              // url = url + "&sortBy=updatedAt&limit=1000&includeAttributes=true&includeLastSale=true";
+              url = url + "&sortBy=updatedAt&limit=1000&includeAttributes=true&includeLastSale=true";
+              console.log(url);
+              const data = await fetch(url).then(response => response.json());
+              continuation = data.continuation;
+              if (data.tokens) {
+                for (let record of data.tokens) {
+                  const token = parseReservoirTokenData(record);
+                  metadata[this.settings.contract][token.tokenId] = {
+                    name: token.name,
+                    // description: token.description,
+                    image: token.image,
+                    attributes: token.attributes,
+                  };
+                }
+              }
+            } while (continuation != null);
+            Vue.set(this.metadata, this.chainId, metadata);
+            // console.log(JSON.stringify(metadata, null, 2));
+            // console.log(now() + " INFO retrieveMetadata - this.metadata: " + JSON.stringify(this.metadata, null, 2));
+            localStorage.tokenExplorerMetadata = JSON.stringify(this.metadata);
+          },
+
           async retrieveERC20BalanceOf() {
             console.log(now() + " retrieveERC20BalanceOf BEGIN - settings.erc20: " + JSON.stringify(this.settings.erc20, null, 2));
             const provider = new ethers.providers.Web3Provider(window.ethereum);
@@ -2127,6 +2166,10 @@
           }
           if ('tokenExplorerTimestamps' in localStorage) {
             this.timestamps = JSON.parse(localStorage.tokenExplorerTimestamps);
+          }
+          if ('tokenExplorerMetadata' in localStorage) {
+            this.metadata = JSON.parse(localStorage.tokenExplorerMetadata);
+            console.log(now() + " mounted - this.metadata: " + JSON.stringify(this.metadata));
           }
           if ('tokenExplorerSettings' in localStorage) {
             const tempSettings = JSON.parse(localStorage.tokenExplorerSettings);
