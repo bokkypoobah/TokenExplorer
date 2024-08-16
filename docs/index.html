@@ -1672,8 +1672,8 @@
             this.sync.records = 0;
             await getLogs(startBlock, latestBlockNumber);
             this.sync.records = null;
-            this.sync.total = 0;
-            this.sync.completed = 0;
+            this.sync.total = null;
+            this.sync.completed = null;
             this.sync.halt = false;
             // console.log(now() + " INFO retrieveEvents END - events: " + JSON.stringify(events, null, 2));
             if (this.type == 20) {
