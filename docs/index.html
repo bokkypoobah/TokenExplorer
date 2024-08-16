@@ -2126,14 +2126,12 @@
           },
 
           sortedFilteredApprovals() {
-            // TODO
             // console.log(now() + " sortedFilteredApprovals");
             const results = [];
             const { regex, tokenIdRegex, blockTxHashRegex } = this.filterRegexes;
 
             for (const item of this.approvals) {
               let include = true;
-              console.log(JSON.stringify(item));
               if (regex) {
                 if (!(regex.test(item.owner) || regex.test(item.spender))) {
                   include = false;
@@ -2153,24 +2151,59 @@
                 results.push(item);
               }
             }
-
-            // if (this.settings.eventsTable.sortOption == "txorderasc") {
-            //   results.sort((a, b) => {
-            //     if (a.blockNumber == b.blockNumber) {
-            //       return a.logIndex - b.logIndex;
-            //     } else {
-            //       return a.blockNumber - b.blockNumber;
-            //     }
-            //   });
-            // } else if (this.settings.eventsTable.sortOption == "txorderdsc") {
-            //   results.sort((a, b) => {
-            //     if (a.blockNumber == b.blockNumber) {
-            //       return b.logIndex - a.logIndex;
-            //     } else {
-            //       return b.blockNumber - a.blockNumber;
-            //     }
-            //   });
-            // }
+            if (this.settings.approvalsTable.sortOption == "txorderasc") {
+              results.sort((a, b) => {
+                if (a.blockNumber == b.blockNumber) {
+                  return a.logIndex - b.logIndex;
+                } else {
+                  return a.blockNumber - b.blockNumber;
+                }
+              });
+            } else if (this.settings.approvalsTable.sortOption == "txorderdsc") {
+              results.sort((a, b) => {
+                if (a.blockNumber == b.blockNumber) {
+                  return b.logIndex - a.logIndex;
+                } else {
+                  return b.blockNumber - a.blockNumber;
+                }
+              });
+            } else if (this.settings.approvalsTable.sortOption == "ownerasc") {
+              results.sort((a, b) => {
+                return ('' + a.owner).localeCompare(b.owner);
+              });
+            } else if (this.settings.approvalsTable.sortOption == "ownerdsc") {
+              results.sort((a, b) => {
+                return ('' + b.owner).localeCompare(a.owner);
+              });
+            } else if (this.settings.approvalsTable.sortOption == "spenderasc") {
+              results.sort((a, b) => {
+                return ('' + a.spender).localeCompare(b.spender);
+              });
+            } else if (this.settings.approvalsTable.sortOption == "spenderdsc") {
+              results.sort((a, b) => {
+                return ('' + b.spender).localeCompare(a.spender);
+              });
+            } else if (this.settings.approvalsTable.sortOption == "tokensasc") {
+              if (this.type == 20) {
+                results.sort((a, b) => {
+                  return a.tokens - b.tokens;
+                });
+              } else if (this.type == 721) {
+                results.sort((a, b) => {
+                  return a.tokenId - b.tokenId;
+                });
+              }
+            } else if (this.settings.approvalsTable.sortOption == "tokensdsc") {
+              if (this.type == 20) {
+                results.sort((a, b) => {
+                  return b.tokens - a.tokens;
+                });
+              } else if (this.type == 721) {
+                results.sort((a, b) => {
+                  return b.tokenId - a.tokenId;
+                });
+              }
+            }
             return results;
           },
           pagedSortedFilteredApprovals() {
