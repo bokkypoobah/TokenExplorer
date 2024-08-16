@@ -192,38 +192,102 @@
                 </b-tab>
               </b-tabs>
 
-              <!-- Events: -->
-              <div v-if="settings.tableIndex == 0">
-                <div class="d-flex flex-wrap m-0 p-0">
-                  <div class="mt-0 pr-1" style="width: 11.0rem;">
-                    <b-form-input type="text" size="sm" v-model.trim="settings.filter" @change="saveSettings" debounce="600" placeholder="🔍 address regex"></b-form-input>
-                  </div>
-                  <div class="mt-0 pr-1" style="width: 11.0rem;">
-                    <b-form-input type="text" size="sm" v-model.trim="settings.tokenIdFilter" @change="saveSettings" debounce="600" placeholder="🔍 tokenid regex"></b-form-input>
-                  </div>
-                  <div class="mt-0 pr-1" style="width: 11.0rem;">
-                    <b-form-input type="text" size="sm" v-model.trim="settings.blockTxHashFilter" @change="saveSettings" debounce="600" placeholder="🔍 block/txhash regex"></b-form-input>
-                  </div>
-                  <div class="mt-0 flex-grow-1">
-                  </div>
-                  <div class="mt-0 pr-1">
+              <div class="d-flex flex-wrap m-0 p-0">
+                <div class="mt-0 pr-1" style="width: 11.0rem;">
+                  <b-form-input type="text" size="sm" v-model.trim="settings.filter" @change="saveSettings" debounce="600" placeholder="🔍 address regex"></b-form-input>
+                </div>
+                <div class="mt-0 pr-1" style="width: 11.0rem;">
+                  <b-form-input type="text" size="sm" v-model.trim="settings.tokenIdFilter" @change="saveSettings" debounce="600" placeholder="🔍 tokenid regex"></b-form-input>
+                </div>
+                <div class="mt-0 pr-1" style="width: 11.0rem;">
+                  <b-form-input type="text" size="sm" v-model.trim="settings.blockTxHashFilter" @change="saveSettings" debounce="600" placeholder="🔍 block/txhash regex"></b-form-input>
+                </div>
+                <div class="mt-0 flex-grow-1">
+                </div>
+                <div class="mt-0 pr-1">
+                  <div v-if="settings.tableIndex == 0">
                     <b-button size="sm" @click="retrieveTimestamps(pagedSortedFilteredEvents.map(e => e.blockNumber))" variant="link" v-b-popover.hover.ds500="'Retrieve timestamps for events below'"><b-icon-clock-history shift-v="+1" font-scale="1.2"></b-icon-clock-history></b-button>
                   </div>
-                  <div class="mt-0 flex-grow-1">
+                  <div v-else-if="settings.tableIndex == 1">
+                    <b-button size="sm" @click="retrieveTimestamps(pagedSortedFilteredTokens.map(e => e.blockNumber))" variant="link" v-b-popover.hover.ds500="'Retrieve timestamps for tokens below'"><b-icon-clock-history shift-v="+1" font-scale="1.2"></b-icon-clock-history></b-button>
                   </div>
-                  <div class="mt-0 pl-1">
-                    <b-form-select size="sm" v-model="settings.eventsTable.sortOption" @change="saveSettings" :options="eventsSortOptions" v-b-popover.hover.bottom="'Yeah. Sort'"></b-form-select>
+                  <div v-else-if="settings.tableIndex == 2">
+                    <b-button size="sm" @click="retrieveTimestamps(pagedSortedFilteredApprovals.map(e => e.blockNumber))" variant="link" v-b-popover.hover.ds500="'Retrieve timestamps for approvals'"><b-icon-clock-history shift-v="+1" font-scale="1.2"></b-icon-clock-history></b-button>
                   </div>
-                  <div class="mt-0 pl-1">
-                    <font size="-2" v-b-popover.hover.bottom="'# filtered / total events'">{{ formatNumber(sortedFilteredEvents.length) + '/' + formatNumber(events.length) }}</font>
-                  </div>
-                  <div class="mt-0 pl-1">
-                    <b-pagination size="sm" v-model="settings.eventsTable.currentPage" @input="saveSettings" :total-rows="sortedFilteredEvents.length" :per-page="settings.eventsTable.pageSize" style="height: 0;"></b-pagination>
-                  </div>
-                  <div class="mt-0 pl-1">
-                    <b-form-select size="sm" v-model="settings.eventsTable.pageSize" @change="saveSettings();" :options="pageSizes" v-b-popover.hover.bottom="'Yeah. Page size'"></b-form-select>
+                  <div v-else-if="settings.tableIndex == 3">
+                    <b-button size="sm" @click="retrieveTimestamps(pagedSortedFilteredApprovalForAlls.map(e => e.blockNumber))" variant="link" v-b-popover.hover.ds500="'Retrieve timestamps for allowances below'"><b-icon-clock-history shift-v="+1" font-scale="1.2"></b-icon-clock-history></b-button>
                   </div>
                 </div>
+                <div class="mt-0 flex-grow-1">
+                </div>
+                <div class="mt-0 pl-1">
+                  <div v-if="settings.tableIndex == 0">
+                    <b-form-select size="sm" v-model="settings.eventsTable.sortOption" @change="saveSettings" :options="eventsSortOptions" v-b-popover.hover.bottom="'Yeah. Sort'"></b-form-select>
+                  </div>
+                  <div v-else-if="settings.tableIndex == 1">
+                    <div v-if="type != 721 && type != 1155">
+                      <b-form-select size="sm" v-model="settings.tokensTable.sortOptionERC20" @change="saveSettings" :options="erc20TokensSortOptions" v-b-popover.hover.bottom="'Yeah. Sort'"></b-form-select>
+                    </div>
+                    <div v-if="type == 721">
+                      <b-form-select size="sm" v-model="settings.tokensTable.sortOptionERC721" @change="saveSettings" :options="erc721And1155TokensSortOptions" v-b-popover.hover.bottom="'Yeah. Sort'"></b-form-select>
+                    </div>
+                    <div v-if="type == 1155">
+                      <b-form-select size="sm" v-model="settings.tokensTable.sortOptionERC1155" @change="saveSettings" :options="erc721And1155TokensSortOptions" v-b-popover.hover.bottom="'Yeah. Sort'"></b-form-select>
+                    </div>
+                  </div>
+                  <div v-else-if="settings.tableIndex == 2">
+                    <b-form-select size="sm" v-model="settings.approvalsTable.sortOption" @change="saveSettings" :options="approvalsSortOptions" v-b-popover.hover.bottom="'Yeah. Sort'"></b-form-select>
+                  </div>
+                  <div v-else-if="settings.tableIndex == 3">
+                    <b-form-select size="sm" v-model="settings.approvalForAllsTable.sortOption" @change="saveSettings" :options="erc721And1155ApprovalForAllsSortOptions" v-b-popover.hover.bottom="'Yeah. Sort'"></b-form-select>
+                  </div>
+                </div>
+                <div class="mt-0 pl-1">
+                  <div v-if="settings.tableIndex == 0">
+                    <font size="-2" v-b-popover.hover.bottom="'# filtered / total events'">{{ formatNumber(sortedFilteredEvents.length) + '/' + formatNumber(events.length) }}</font>
+                  </div>
+                  <div v-else-if="settings.tableIndex == 1">
+                    <font size="-2" v-b-popover.hover.bottom="'# filtered / total tokens'">{{ formatNumber(sortedFilteredTokens.length) + '/' + formatNumber(tokens.length) }}</font>
+                  </div>
+                  <div v-else-if="settings.tableIndex == 2">
+                    <font size="-2" v-b-popover.hover.bottom="'# filtered / total approvals'">{{ formatNumber(sortedFilteredApprovals.length) + '/' + formatNumber(approvals.length) }}</font>
+                  </div>
+                  <div v-else-if="settings.tableIndex == 3">
+                    <font size="-2" v-b-popover.hover.bottom="'# filtered / total approvalForAlls'">{{ formatNumber(sortedFilteredApprovalForAlls.length) + '/' + formatNumber(approvalForAlls.length) }}</font>
+                  </div>
+                </div>
+                <div class="mt-0 pl-1">
+                  <div v-if="settings.tableIndex == 0">
+                    <b-pagination size="sm" v-model="settings.eventsTable.currentPage" @input="saveSettings" :total-rows="sortedFilteredEvents.length" :per-page="settings.eventsTable.pageSize" style="height: 0;"></b-pagination>
+                  </div>
+                  <div v-else-if="settings.tableIndex == 1">
+                    <b-pagination size="sm" v-model="settings.tokensTable.currentPage" @input="saveSettings" :total-rows="sortedFilteredTokens.length" :per-page="settings.tokensTable.pageSize" style="height: 0;"></b-pagination>
+                  </div>
+                  <div v-else-if="settings.tableIndex == 2">
+                    <b-pagination size="sm" v-model="settings.approvalsTable.currentPage" @input="saveSettings" :total-rows="sortedFilteredApprovals.length" :per-page="settings.approvalsTable.pageSize" style="height: 0;"></b-pagination>
+                  </div>
+                  <div v-else-if="settings.tableIndex == 3">
+                    <b-pagination size="sm" v-model="settings.approvalForAllsTable.currentPage" @input="saveSettings" :total-rows="sortedFilteredApprovalForAlls.length" :per-page="settings.approvalForAllsTable.pageSize" style="height: 0;"></b-pagination>
+                  </div>
+                </div>
+                <div class="mt-0 pl-1">
+                  <div v-if="settings.tableIndex == 0">
+                    <b-form-select size="sm" v-model="settings.eventsTable.pageSize" @change="saveSettings();" :options="pageSizes" v-b-popover.hover.bottom="'Yeah. Page size'"></b-form-select>
+                  </div>
+                  <div v-else-if="settings.tableIndex == 1">
+                    <b-form-select size="sm" v-model="settings.tokensTable.pageSize" @change="saveSettings();" :options="pageSizes" v-b-popover.hover.bottom="'Yeah. Page size'"></b-form-select>
+                  </div>
+                  <div v-else-if="settings.tableIndex == 2">
+                    <b-form-select size="sm" v-model="settings.approvalsTable.pageSize" @change="saveSettings();" :options="pageSizes" v-b-popover.hover.bottom="'Yeah. Page size'"></b-form-select>
+                  </div>
+                  <div v-else-if="settings.tableIndex == 3">
+                    <b-form-select size="sm" v-model="settings.approvalForAllsTable.pageSize" @change="saveSettings();" :options="pageSizes" v-b-popover.hover.bottom="'Yeah. Page size'"></b-form-select>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Events: -->
+              <div v-if="settings.tableIndex == 0">
                 <b-table small fixed striped :fields="eventsFields" :items="pagedSortedFilteredEvents" show-empty empty-html="Click [Retrieve] above" head-variant="light" class="mt-1">
                   <template #cell(number)="data">
                       <font size="-1" class="text-muted">{{ parseInt(data.index) + ((settings.eventsTable.currentPage - 1) * settings.eventsTable.pageSize) + 1 }}</font>
@@ -331,44 +395,6 @@
 
               <!-- Tokens: -->
               <div v-if="settings.tableIndex == 1">
-                <div class="d-flex flex-wrap m-0 p-0">
-                  <div class="mt-0 pr-1" style="width: 11.0rem;">
-                    <b-form-input type="text" size="sm" v-model.trim="settings.filter" @change="saveSettings" debounce="600" placeholder="🔍 address regex"></b-form-input>
-                  </div>
-                  <div class="mt-0 pr-1" style="width: 11.0rem;">
-                    <b-form-input type="text" size="sm" v-model.trim="settings.tokenIdFilter" @change="saveSettings" debounce="600" placeholder="🔍 tokenid regex"></b-form-input>
-                  </div>
-                  <div class="mt-0 pr-1" style="width: 11.0rem;">
-                    <b-form-input type="text" size="sm" v-model.trim="settings.blockTxHashFilter" @change="saveSettings" debounce="600" placeholder="🔍 block/txhash regex"></b-form-input>
-                  </div>
-                  <div class="mt-0 flex-grow-1">
-                  </div>
-                  <div class="mt-0 pr-1">
-                    <b-button size="sm" @click="retrieveTimestamps(pagedSortedFilteredTokens.map(e => e.blockNumber))" variant="link" v-b-popover.hover.ds500="'Retrieve timestamps for tokens below'"><b-icon-clock-history shift-v="+1" font-scale="1.2"></b-icon-clock-history></b-button>
-                  </div>
-                  <div class="mt-0 flex-grow-1">
-                  </div>
-                  <div class="mt-0 pl-1">
-                    <div v-if="type != 721 && type != 1155">
-                      <b-form-select size="sm" v-model="settings.tokensTable.sortOptionERC20" @change="saveSettings" :options="erc20TokensSortOptions" v-b-popover.hover.bottom="'Yeah. Sort'"></b-form-select>
-                    </div>
-                    <div v-if="type == 721">
-                      <b-form-select size="sm" v-model="settings.tokensTable.sortOptionERC721" @change="saveSettings" :options="erc721And1155TokensSortOptions" v-b-popover.hover.bottom="'Yeah. Sort'"></b-form-select>
-                    </div>
-                    <div v-if="type == 1155">
-                      <b-form-select size="sm" v-model="settings.tokensTable.sortOptionERC1155" @change="saveSettings" :options="erc721And1155TokensSortOptions" v-b-popover.hover.bottom="'Yeah. Sort'"></b-form-select>
-                    </div>
-                  </div>
-                  <div class="mt-0 pl-1">
-                    <font size="-2" v-b-popover.hover.bottom="'# filtered / total events'">{{ formatNumber(sortedFilteredTokens.length) + '/' + formatNumber(tokens.length) }}</font>
-                  </div>
-                  <div class="mt-0 pl-1">
-                    <b-pagination size="sm" v-model="settings.tokensTable.currentPage" @input="saveSettings" :total-rows="sortedFilteredTokens.length" :per-page="settings.tokensTable.pageSize" style="height: 0;"></b-pagination>
-                  </div>
-                  <div class="mt-0 pl-1">
-                    <b-form-select size="sm" v-model="settings.tokensTable.pageSize" @change="saveSettings();" :options="pageSizes" v-b-popover.hover.bottom="'Yeah. Page size'"></b-form-select>
-                  </div>
-                </div>
                 <b-table small fixed striped :fields="type == 20 ? tokensFieldsFungible : tokensFieldsNonFungible" :items="pagedSortedFilteredTokens" show-empty empty-html="Click [Retrieve] above" head-variant="light" class="mt-1">
                   <template #cell(number)="data">
                       <font size="-1" class="text-muted">{{ parseInt(data.index) + ((settings.tokensTable.currentPage - 1) * settings.tokensTable.pageSize) + 1 }}</font>
@@ -418,36 +444,6 @@
 
               <!-- Approvals: -->
               <div v-if="settings.tableIndex == 2">
-                <div class="d-flex flex-wrap m-0 p-0">
-                  <div class="mt-0 pr-1" style="width: 11.0rem;">
-                    <b-form-input type="text" size="sm" v-model.trim="settings.filter" @change="saveSettings" debounce="600" placeholder="🔍 address regex"></b-form-input>
-                  </div>
-                  <div class="mt-0 pr-1" style="width: 11.0rem;">
-                    <b-form-input type="text" size="sm" v-model.trim="settings.tokenIdFilter" @change="saveSettings" debounce="600" placeholder="🔍 tokenid regex"></b-form-input>
-                  </div>
-                  <div class="mt-0 pr-1" style="width: 11.0rem;">
-                    <b-form-input type="text" size="sm" v-model.trim="settings.blockTxHashFilter" @change="saveSettings" debounce="600" placeholder="🔍 block/txhash regex"></b-form-input>
-                  </div>
-                  <div class="mt-0 flex-grow-1">
-                  </div>
-                  <div class="mt-0 pr-1">
-                    <b-button size="sm" @click="retrieveTimestamps(pagedSortedFilteredApprovals.map(e => e.blockNumber))" variant="link" v-b-popover.hover.ds500="'Retrieve timestamps for approvals'"><b-icon-clock-history shift-v="+1" font-scale="1.2"></b-icon-clock-history></b-button>
-                  </div>
-                  <div class="mt-0 flex-grow-1">
-                  </div>
-                  <div class="mt-0 pl-1">
-                    <b-form-select size="sm" v-model="settings.approvalsTable.sortOption" @change="saveSettings" :options="approvalsSortOptions" v-b-popover.hover.bottom="'Yeah. Sort'"></b-form-select>
-                  </div>
-                  <div class="mt-0 pl-1">
-                    <font size="-2" v-b-popover.hover.bottom="'# filtered / total events'">{{ formatNumber(sortedFilteredApprovals.length) + '/' + formatNumber(approvals.length) }}</font>
-                  </div>
-                  <div class="mt-0 pl-1">
-                    <b-pagination size="sm" v-model="settings.approvalsTable.currentPage" @input="saveSettings" :total-rows="sortedFilteredApprovals.length" :per-page="settings.approvalsTable.pageSize" style="height: 0;"></b-pagination>
-                  </div>
-                  <div class="mt-0 pl-1">
-                    <b-form-select size="sm" v-model="settings.approvalsTable.pageSize" @change="saveSettings();" :options="pageSizes" v-b-popover.hover.bottom="'Yeah. Page size'"></b-form-select>
-                  </div>
-                </div>
                 <b-table small fixed striped :fields="approvalsFields" :items="pagedSortedFilteredApprovals" show-empty empty-html="Click [Retrieve] above" head-variant="light" class="mt-1">
                   <template #cell(number)="data">
                       <font size="-1" class="text-muted">{{ parseInt(data.index) + ((settings.approvalsTable.currentPage - 1) * settings.approvalsTable.pageSize) + 1 }}</font>
@@ -505,33 +501,6 @@
 
               <!-- ApprovalForAlls: -->
               <div v-if="settings.tableIndex == 3">
-                <div class="d-flex flex-wrap m-0 p-0">
-                  <div class="mt-0 pr-1" style="width: 11.0rem;">
-                    <b-form-input type="text" size="sm" v-model.trim="settings.filter" @change="saveSettings" debounce="600" placeholder="🔍 address regex"></b-form-input>
-                  </div>
-                  <div class="mt-0 pr-1" style="width: 11.0rem;">
-                    <b-form-input type="text" size="sm" v-model.trim="settings.blockTxHashFilter" @change="saveSettings" debounce="600" placeholder="🔍 block/txhash regex"></b-form-input>
-                  </div>
-                  <div class="mt-0 flex-grow-1">
-                  </div>
-                  <div class="mt-0 pr-1">
-                    <b-button size="sm" @click="retrieveTimestamps(pagedSortedFilteredApprovalForAlls.map(e => e.blockNumber))" variant="link" v-b-popover.hover.ds500="'Retrieve timestamps for allowances below'"><b-icon-clock-history shift-v="+1" font-scale="1.2"></b-icon-clock-history></b-button>
-                  </div>
-                  <div class="mt-0 flex-grow-1">
-                  </div>
-                  <div class="mt-0 pl-1">
-                    <b-form-select size="sm" v-model="settings.approvalForAllsTable.sortOption" @change="saveSettings" :options="erc721And1155ApprovalForAllsSortOptions" v-b-popover.hover.bottom="'Yeah. Sort'"></b-form-select>
-                  </div>
-                  <div class="mt-0 pl-1">
-                    <font size="-2" v-b-popover.hover.bottom="'# filtered / total events'">{{ formatNumber(sortedFilteredApprovalForAlls.length) + '/' + formatNumber(approvalForAlls.length) }}</font>
-                  </div>
-                  <div class="mt-0 pl-1">
-                    <b-pagination size="sm" v-model="settings.approvalForAllsTable.currentPage" @input="saveSettings" :total-rows="sortedFilteredApprovalForAlls.length" :per-page="settings.approvalForAllsTable.pageSize" style="height: 0;"></b-pagination>
-                  </div>
-                  <div class="mt-0 pl-1">
-                    <b-form-select size="sm" v-model="settings.approvalForAllsTable.pageSize" @change="saveSettings();" :options="pageSizes" v-b-popover.hover.bottom="'Yeah. Page size'"></b-form-select>
-                  </div>
-                </div>
                 <b-table small fixed striped :fields="approvalForAllsFields" :items="pagedSortedFilteredApprovalForAlls" show-empty empty-html="Click [Retrieve] above" head-variant="light" class="mt-1">
                   <template #cell(number)="data">
                       <font size="-1" class="text-muted">{{ parseInt(data.index) + ((settings.approvalForAllsTable.currentPage - 1) * settings.approvalForAllsTable.pageSize) + 1 }}</font>
