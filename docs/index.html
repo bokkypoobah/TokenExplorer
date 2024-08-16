@@ -1049,8 +1049,6 @@
             const results = [];
             const { regex, tokenIdRegex, blockTxHashRegex } = this.filterRegexes;
             const tokensMetadata = this.metadata[this.chainId] && this.metadata[this.chainId][this.settings.contract] && this.metadata[this.chainId][this.settings.contract].tokens || {};
-            // console.log("tokensMetadata: " + JSON.stringify(tokensMetadata));
-
             for (const item of this.events) {
               const metadata = tokensMetadata[item.tokenId] || null;
               let metadatas = null;
@@ -1062,28 +1060,21 @@
                     value: item.values[index],
                     name: tokensMetadata[tokenId] && tokensMetadata[tokenId].name || null,
                     image: tokensMetadata[tokenId] && tokensMetadata[tokenId].image || null,
-                    attributes: tokensMetadata[tokenId] && tokensMetadata[tokenId].attributes || null,
+                    // attributes: tokensMetadata[tokenId] && tokensMetadata[tokenId].attributes || null,
                   });
                 }
               }
               let include = true;
               if (regex) {
                 if (item.type == "Transfer") {
-                  if (item.eventType == 721) {
-                    if (!(regex.test(item.from) || regex.test(item.to) || regex.test(item.txHash) || regex.test(item.blockNumber.toString()) || regex.test(item.tokenId.toString()))) {
-                      include = false;
-                    }
-                  } else {
-                    if (!(regex.test(item.from) || regex.test(item.to) || regex.test(item.txHash) || regex.test(item.blockNumber.toString()))) {
-                      include = false;
-                    }
+                  if (!(regex.test(item.from) || regex.test(item.to) || regex.test(item.txHash) || regex.test(item.blockNumber.toString()))) {
+                    include = false;
                   }
                 } else if (item.type == "TransferSingle") {
                   if (!(regex.test(item.from) || regex.test(item.to) || regex.test(item.txHash) || regex.test(item.blockNumber.toString()) || regex.test(item.tokenId.toString()))) {
                     include = false;
                   }
                 } else if (item.type == "TransferBatch") {
-                  // TODO: Scan tokenIds
                   if (!(regex.test(item.from) || regex.test(item.to) || regex.test(item.txHash) || regex.test(item.blockNumber.toString()))) {
                     include = false;
                   }
@@ -1095,6 +1086,28 @@
                   if (!(regex.test(item.owner) || regex.test(item.operator) || regex.test(item.txHash) || regex.test(item.blockNumber))) {
                     include = false;
                   }
+                }
+              }
+              if (include && tokenIdRegex && (this.type == 721 || this.type == 1155)) {
+                if (this.type == 721 || (this.type == 1155 && item.type == "TransferSingle")) {
+                  if (!(tokenIdRegex.test(item.tokenId))) {
+                    include = false;
+                  }
+                } else if (this.type == 1155 && item.type == "TransferBatch") {
+                  let found = false;
+                  for (const [index, tokenId] of item.tokenIds.entries()) {
+                    console.log(index + " " + tokenId);
+                    if (tokenIdRegex.test(tokenId)) {
+                      console.log("FOUND: " + JSON.stringify(item.tokenIds));
+                      found = true;
+                      break;
+                    }
+                  }
+                  if (!found) {
+                    include = false;
+                  }
+                } else {
+                  include = false;
                 }
               }
               if (include && blockTxHashRegex) {
@@ -1113,7 +1126,7 @@
                     ...item,
                     name: metadata.name,
                     image: metadata.image,
-                    attributes: metadata.attributes,
+                    // attributes: metadata.attributes,
                   });
                 } else {
                   results.push(item);
@@ -1140,7 +1153,7 @@
             return results;
           },
           pagedSortedFilteredEvents() {
-            console.log(now() + " pagedSortedFilteredEvents - this.tokens[0..3]: " + JSON.stringify(this.sortedFilteredEvents.slice(0, 4), null, 2));
+            // console.log(now() + " pagedSortedFilteredEvents - this.tokens[0..3]: " + JSON.stringify(this.sortedFilteredEvents.slice(0, 4), null, 2));
             return this.sortedFilteredEvents.slice((this.settings.eventsTable.currentPage - 1) * this.settings.eventsTable.pageSize, this.settings.eventsTable.currentPage * this.settings.eventsTable.pageSize);
           },
 
