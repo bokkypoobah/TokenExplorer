@@ -158,14 +158,14 @@
                       <b-button size="sm" :disabled="!validAddress(settings.contract)" :href="explorer + 'token/' + settings.contract + '#code'" variant="link" v-b-popover.hover.ds500="'View in explorer'" target="_blank" class="m-0 ml-2 mr-2 p-0"><b-icon-link45deg shift-v="-1" font-scale="1.2"></b-icon-link45deg></b-button>
                     </div>
                     <div class="mt-0 pr-1">
-                      <b-button size="sm" :disabled="!!sync.section || !validAddress(settings.contract)" @click="retrieveEvents" variant="primary">Retrieve</b-button>
+                      <b-button size="sm" :disabled="sync.records != null || !validAddress(settings.contract)" @click="retrieveEvents" variant="primary">Retrieve</b-button>
                     </div>
                     <!-- <div class="mt-0 pr-1">
                       <b-button :disabled="!settings.contract || !validAddress(settings.contract)" @click="copyToClipboard(settings.contract);" variant="link" v-b-popover.hover.ds500="'Copy ERC-20 contract address to clipboard'" class="m-0 ml-2 p-0"><b-icon-clipboard shift-v="+1" font-scale="1.1"></b-icon-clipboard></b-button>
                     </div> -->
                     <div class="mt-0 pr-1" style="width: 23.0rem;">
                       <font size="-1">
-                        <b-badge variant="light" v-b-popover.hover.ds500="decimals != null && totalSupply && ('symbol: ' + symbol + ', name: ' + name + ', decimals: ' + decimals + ', totalSupply: ' + formatDecimals(totalSupply, decimals) + ' (' + formatDecimals(totalSupply, 0) + ')') || ''" class="m-0 mt-1 ml-2 mr-1">
+                        <b-badge variant="light" v-b-popover.hover.ds500="decimals != null && totalSupply && ('symbol: ' + symbol + ', name: ' + name + ', decimals: ' + decimals + ', totalSupply: ' + formatDecimals(totalSupply, decimals) + ' (' + formatNumber(totalSupply) + ')') || ''" class="m-0 mt-1 ml-2 mr-1">
                           {{ (type && ('ERC-' + type) || 'Enter token contract address and click [Retrieve]') }}
                         </b-badge>
                         <b-badge v-if="symbol" variant="light" v-b-popover.hover.ds500="'symbol'" class="m-0 mt-1">
@@ -177,7 +177,7 @@
                         <b-badge v-if="decimals" variant="light" v-b-popover.hover.ds500="'decimals'" class="m-0 mt-1">
                           {{ decimals }}
                         </b-badge>
-                        <b-badge v-if="totalSupply" variant="light" v-b-popover.hover.ds500="'totalSupply ' + (totalSupply && formatDecimals(totalSupply, 0) || '')" class="m-0 mt-1">
+                        <b-badge v-if="totalSupply" variant="light" v-b-popover.hover.ds500="'totalSupply ' + (totalSupply && formatNumber(totalSupply) || '')" class="m-0 mt-1">
                           {{ formatDecimals(totalSupply, decimals) }}
                         </b-badge>
                       </font>
@@ -218,26 +218,29 @@
                 </div>
                 <div class="mt-0 flex-grow-1">
                 </div>
-                <div v-if="!sync.section" class="mt-0 pr-1">
+                <div v-if="sync.records == null" class="mt-0 pr-1">
                   <div v-if="settings.tableIndex == 0">
-                    <b-button size="sm" @click="retrieveTimestamps(pagedSortedFilteredEvents.map(e => e.blockNumber))" variant="link" v-b-popover.hover.ds500="'Retrieve timestamps for events below'"><b-icon-clock-history shift-v="+1" font-scale="1.2"></b-icon-clock-history></b-button>
+                    <b-button size="sm" :disabled="pagedSortedFilteredEvents == 0" @click="retrieveTimestamps(pagedSortedFilteredEvents.map(e => e.blockNumber))" variant="link" v-b-popover.hover.ds500="'Retrieve timestamps for events below'"><b-icon-clock-history shift-v="+1" font-scale="1.2"></b-icon-clock-history></b-button>
                   </div>
                   <div v-else-if="settings.tableIndex == 1">
-                    <b-button size="sm" @click="retrieveTimestamps(pagedSortedFilteredTokens.map(e => e.blockNumber))" variant="link" v-b-popover.hover.ds500="'Retrieve timestamps for tokens below'"><b-icon-clock-history shift-v="+1" font-scale="1.2"></b-icon-clock-history></b-button>
+                    <b-button size="sm" :disabled="pagedSortedFilteredTokens == 0" @click="retrieveTimestamps(pagedSortedFilteredTokens.map(e => e.blockNumber))" variant="link" v-b-popover.hover.ds500="'Retrieve timestamps for tokens below'"><b-icon-clock-history shift-v="+1" font-scale="1.2"></b-icon-clock-history></b-button>
                   </div>
                   <div v-else-if="settings.tableIndex == 2">
-                    <b-button size="sm" @click="retrieveTimestamps(pagedSortedFilteredApprovals.map(e => e.blockNumber))" variant="link" v-b-popover.hover.ds500="'Retrieve timestamps for approvals'"><b-icon-clock-history shift-v="+1" font-scale="1.2"></b-icon-clock-history></b-button>
+                    <b-button size="sm" :disabled="pagedSortedFilteredApprovals == 0" @click="retrieveTimestamps(pagedSortedFilteredApprovals.map(e => e.blockNumber))" variant="link" v-b-popover.hover.ds500="'Retrieve timestamps for approvals'"><b-icon-clock-history shift-v="+1" font-scale="1.2"></b-icon-clock-history></b-button>
                   </div>
                   <div v-else-if="settings.tableIndex == 3">
-                    <b-button size="sm" @click="retrieveTimestamps(pagedSortedFilteredApprovalForAlls.map(e => e.blockNumber))" variant="link" v-b-popover.hover.ds500="'Retrieve timestamps for allowances below'"><b-icon-clock-history shift-v="+1" font-scale="1.2"></b-icon-clock-history></b-button>
+                    <b-button size="sm" :disabled="pagedSortedFilteredApprovalForAlls == 0" @click="retrieveTimestamps(pagedSortedFilteredApprovalForAlls.map(e => e.blockNumber))" variant="link" v-b-popover.hover.ds500="'Retrieve timestamps for allowances below'"><b-icon-clock-history shift-v="+1" font-scale="1.2"></b-icon-clock-history></b-button>
                   </div>
                 </div>
-                <div v-if="sync.section" class="mt-1" style="width: 300px;">
-                  <b-progress height="1.5rem" :max="sync.total" show-progress :animated="!!sync.section" :variant="!!sync.section ? 'success' : 'secondary'" v-b-popover.hover.ds500="'Click the button on the right to stop'">
+                <div v-if="sync.records != null" class="mt-1" style="width: 300px;">
+                  <b-progress height="1.5rem" :max="sync.total" show-progress :animated="sync.records != null" variant="success" v-b-popover.hover.ds500="'Click the button on the right to stop'">
                     <b-progress-bar :value="sync.completed">
-                      {{ sync.total == null ? (sync.completed + ' ' + sync.section) : (sync.completed + '/' + sync.total + ' ' + ((sync.completed / sync.total) * 100).toFixed(0) + '% ' + sync.section) }}
+                      {{ sync.total == null ? (formatNumber(sync.completed) + ' ' + formatNumber(sync.records)) : (formatNumber(sync.completed) + '/' + formatNumber(sync.total) + ' ' + ((sync.completed / sync.total) * 100).toFixed(0) + '% ' + formatNumber(sync.records)) }}
                     </b-progress-bar>
                   </b-progress>
+                </div>
+                <div v-if="sync.records != null" class="mt-0 pl-1">
+                  <b-button size="sm" :disabled="sync.halt" @click="sync.halt = true;" variant="link" v-b-popover.hover.ds500="'Click to stop'"><b-icon-stop-fill shift-v="-2" font-scale="1.0"></b-icon-stop-fill></b-button>
                 </div>
                 <div class="mt-0 flex-grow-1">
                 </div>
@@ -887,9 +890,9 @@
           },
           timestamps: {},
           sync: {
-            section: null, // '52 rows', // null,
-            total: 100000, // null,
-            completed: 30000, // null,
+            section: null,
+            total: null,
+            completed: null,
             halt: false,
           },
           eventsSortOptions: [
@@ -1641,6 +1644,8 @@
                   ],
                 };
                 const eventLogs = await provider.getLogs(filter);
+                t.sync.completed = toBlock;
+                t.sync.records += eventLogs.length;
                 const records = parseEventLogs(eventLogs, this.type, this.chainId, latestBlockNumber);
                 for (const record of records) {
                   events.push(record);
@@ -1649,7 +1654,7 @@
               } catch (e) {
                 split = true;
               }
-              if (split) {
+              if (split && !t.sync.halt) {
                 const mid = parseInt((fromBlock + toBlock) / 2);
                 await getLogs(fromBlock, mid);
                 await getLogs(parseInt(mid) + 1, toBlock);
@@ -1657,7 +1662,13 @@
             }
             const startBlock = 0;
             // const startBlock = latestBlockNumber - 10000;
+            this.sync.total = latestBlockNumber;
+            this.sync.records = 0;
             await getLogs(startBlock, latestBlockNumber);
+            this.sync.records = null;
+            this.sync.total = 0;
+            this.sync.completed = 0;
+            this.sync.halt = false;
             // console.log(now() + " INFO retrieveEvents END - events: " + JSON.stringify(events, null, 2));
             if (this.type == 20) {
               this.collateERC20();
