@@ -46,7 +46,7 @@
           <b-navbar-nav class="ml-auto">
             <b-nav-item size="sm" @click="settings.tabIndex = 0; saveSettings();" :active="settings.tabIndex == 0" active-class="active" v-b-popover.hover.ds500="'Home, and information on this tool'">Home</b-nav-item>
             <b-nav-item size="sm" @click="settings.tabIndex = 1; saveSettings();" :active="settings.tabIndex == 1" active-class="active" v-b-popover.hover.ds500="'ERC-20, ERC-721 and ERC-1155 token contract explorer'">Explorer</b-nav-item>
-            <b-nav-item size="sm" @click="settings.tabIndex = 2; saveSettings();" :active="settings.tabIndex == 2" active-class="active" v-b-popover.hover.ds500="'ERC-20 functions to be migrated'">To Do</b-nav-item>
+            <!-- <b-nav-item size="sm" @click="settings.tabIndex = 2; saveSettings();" :active="settings.tabIndex == 2" active-class="active" v-b-popover.hover.ds500="'ERC-20 functions to be migrated'">To Do</b-nav-item> -->
             <!-- <b-nav-item size="sm" @click="settings.tabIndex = 3; saveSettings();" :active="settings.tabIndex == 3" active-class="active" v-b-popover.hover.ds500="'ERC-721 Non-Fungible Tokens'">ERC-721</b-nav-item> -->
             <!-- <b-nav-item size="sm" @click="settings.tabIndex = 4; saveSettings();" :active="settings.tabIndex == 4" active-class="active" v-b-popover.hover.ds500="'ERC-1155 Non-Fungible Tokens - WIP'">ERC-1155</b-nav-item> -->
             <b-button size="sm" variant="outline-primary" class="ml-1" @click="connectToWeb3(); processNewBlock(0);" v-b-popover.hover.ds500="'Click to update wallet'">{{ coinbase && (coinbase.substring(0, 8) + '...' + coinbase.slice(-6)) || 'Connect' }}</b-button>
