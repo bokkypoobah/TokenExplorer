@@ -137,16 +137,16 @@
 
             <!-- Explorer: -->
             <b-card v-if="settings.tabIndex == 1" no-header body-class="m-0 p-0" class="m-0 p-0 border-0">
+              <!-- Tabs: -->
               <b-tabs card v-model="settings.tableIndex" @changed="saveSettings();" content-class="mt-1" align="left">
                 <template #tabs-start>
-
                   <div class="d-flex flex-wrap m-0 p-0">
                     <div class="mt-0 pr-0" style="width: 25.0rem;">
                       <b-form-group :state="!settings.contract || validAddress(settings.contract)" :invalid-feedback="'Invalid address'" class="m-0 p-0">
                         <b-form-input type="text" size="sm" id="explorer-contract" v-model="settings.contract" @change="saveSettings" placeholder="Enter token contract address, or select from dropdown"></b-form-input>
                       </b-form-group>
                     </div>
-                    <div class="mt-0 pr-1">
+                    <div class="mt-0 pr-0">
                       <b-dropdown size="sm" id="dropdown-left" text="" variant="link" v-b-popover.hover.ds500="'Some sample token contracts'" class="m-0 ml-1 p-0">
                         <b-dropdown-item v-if="sampleContracts('all').length == 0" disabled>No sample contracts on this network</b-dropdown-item>
                         <div v-for="(item, index) of sampleContracts('all')" v-bind:key="index">
@@ -155,21 +155,33 @@
                       </b-dropdown>
                     </div>
                     <div class="mt-0 pr-1">
-                      <b-button size="sm" :disabled="!validAddress(settings.contract)" @click="retrieveEvents" variant="primary">Retrieve</b-button>
+                      <b-button size="sm" :disabled="!validAddress(settings.contract)" :href="explorer + 'token/' + settings.contract + '#code'" variant="link" v-b-popover.hover.ds500="'View in explorer'" target="_blank" class="m-0 ml-2 mr-2 p-0"><b-icon-link45deg shift-v="-1" font-scale="1.2"></b-icon-link45deg></b-button>
+                    </div>
+                    <div class="mt-0 pr-1">
+                      <b-button size="sm" :disabled="!!sync.section || !validAddress(settings.contract)" @click="retrieveEvents" variant="primary">Retrieve</b-button>
                     </div>
                     <!-- <div class="mt-0 pr-1">
                       <b-button :disabled="!settings.contract || !validAddress(settings.contract)" @click="copyToClipboard(settings.contract);" variant="link" v-b-popover.hover.ds500="'Copy ERC-20 contract address to clipboard'" class="m-0 ml-2 p-0"><b-icon-clipboard shift-v="+1" font-scale="1.1"></b-icon-clipboard></b-button>
                     </div> -->
-                    <div class="mt-0 pr-1">
-                      <b-button size="sm" :disabled="!validAddress(settings.contract)" :href="explorer + 'token/' + settings.contract + '#code'" variant="link" v-b-popover.hover.ds500="'View in explorer'" target="_blank" class="m-0 ml-2 mr-2 p-0"><b-icon-link45deg shift-v="-1" font-scale="1.2"></b-icon-link45deg></b-button>
+                    <div class="mt-0 pr-1" style="width: 23.0rem;">
+                      <font size="-1">
+                        <b-badge variant="light" v-b-popover.hover.ds500="decimals != null && totalSupply && ('symbol: ' + symbol + ', name: ' + name + ', decimals: ' + decimals + ', totalSupply: ' + formatDecimals(totalSupply, decimals) + ' (' + formatDecimals(totalSupply, 0) + ')') || ''" class="m-0 mt-1 ml-2 mr-1">
+                          {{ (type && ('ERC-' + type) || 'Enter token contract address and click [Retrieve]') }}
+                        </b-badge>
+                        <b-badge v-if="symbol" variant="light" v-b-popover.hover.ds500="'symbol'" class="m-0 mt-1">
+                          {{ symbol }}
+                        </b-badge>
+                        <b-badge v-if="name" variant="light" v-b-popover.hover.ds500="'name'" class="m-0 mt-1">
+                          {{ name }}
+                        </b-badge>
+                        <b-badge v-if="decimals" variant="light" v-b-popover.hover.ds500="'decimals'" class="m-0 mt-1">
+                          {{ decimals }}
+                        </b-badge>
+                        <b-badge v-if="totalSupply" variant="light" v-b-popover.hover.ds500="'totalSupply ' + (totalSupply && formatDecimals(totalSupply, 0) || '')" class="m-0 mt-1">
+                          {{ formatDecimals(totalSupply, decimals) }}
+                        </b-badge>
+                      </font>
                     </div>
-                    <div class="mt-0 pr-1" style="width: 20.0rem;">
-                      <b-badge pill variant="light" v-b-popover.hover.ds500="decimals != null && totalSupply && ('symbol: ' + symbol + ', name: ' + name + ', decimals: ' + decimals + ', totalSupply: ' + formatDecimals(totalSupply, decimals) + ' (' + formatDecimals(totalSupply, 0) + ')') || ''" class="mt-1 ml-2 mr-4">
-                        {{ (type && ('ERC-' + type) || '') + ((symbol && (': ' + symbol)) || '') }}
-                      </b-badge>
-                    </div>
-                    <!-- <div class="mt-0 flex-grow-1">
-                    </div> -->
                   </div>
                 </template>
                 <b-tab no-body active>
@@ -206,7 +218,7 @@
                 </div>
                 <div class="mt-0 flex-grow-1">
                 </div>
-                <div class="mt-0 pr-1">
+                <div v-if="!sync.section" class="mt-0 pr-1">
                   <div v-if="settings.tableIndex == 0">
                     <b-button size="sm" @click="retrieveTimestamps(pagedSortedFilteredEvents.map(e => e.blockNumber))" variant="link" v-b-popover.hover.ds500="'Retrieve timestamps for events below'"><b-icon-clock-history shift-v="+1" font-scale="1.2"></b-icon-clock-history></b-button>
                   </div>
@@ -219,6 +231,13 @@
                   <div v-else-if="settings.tableIndex == 3">
                     <b-button size="sm" @click="retrieveTimestamps(pagedSortedFilteredApprovalForAlls.map(e => e.blockNumber))" variant="link" v-b-popover.hover.ds500="'Retrieve timestamps for allowances below'"><b-icon-clock-history shift-v="+1" font-scale="1.2"></b-icon-clock-history></b-button>
                   </div>
+                </div>
+                <div v-if="sync.section" class="mt-1" style="width: 300px;">
+                  <b-progress height="1.5rem" :max="sync.total" show-progress :animated="!!sync.section" :variant="!!sync.section ? 'success' : 'secondary'" v-b-popover.hover.ds500="'Click the button on the right to stop'">
+                    <b-progress-bar :value="sync.completed">
+                      {{ sync.total == null ? (sync.completed + ' ' + sync.section) : (sync.completed + '/' + sync.total + ' ' + ((sync.completed / sync.total) * 100).toFixed(0) + '% ' + sync.section) }}
+                    </b-progress-bar>
+                  </b-progress>
                 </div>
                 <div class="mt-0 flex-grow-1">
                 </div>
@@ -867,6 +886,12 @@
             logs: [],
           },
           timestamps: {},
+          sync: {
+            section: null, // '52 rows', // null,
+            total: 100000, // null,
+            completed: 30000, // null,
+            halt: false,
+          },
           eventsSortOptions: [
             { value: 'txorderasc', text: '▲ TxOrder' },
             { value: 'txorderdsc', text: '▼ TxOrder' },
@@ -910,6 +935,7 @@
           pageSizes: [
             { value: 5, text: '5' },
             { value: 10, text: '10' },
+            { value: 15, text: '15' },
             { value: 25, text: '25' },
             { value: 50, text: '50' },
             { value: 100, text: '100' },
