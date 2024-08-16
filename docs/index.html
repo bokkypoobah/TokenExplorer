@@ -136,68 +136,56 @@
             </b-card>
 
             <!-- Explorer: -->
-            <b-card v-if="settings.tabIndex == 1" no-header body-class="m-1 p-1" class="m-0 p-0 border-0">
-
-              <!-- <b-form-group label="contract:" label-for="explorer-contract" label-size="lg" label-class="font-weight-bold pt-0" label-cols-sm="2" label-align-sm="right" :state="!settings.contract || validAddress(settings.contract)" :invalid-feedback="'Invalid address'" :description="description" class="mx-0 my-1 p-0"> -->
-                <!-- <template v-slot:description>
-                  {{ description }}
-                </template> -->
-                <!-- <b-input-group size="sm" class="w-50">
-                  <b-form-input type="text" size="sm" id="explorer-contract" v-model="settings.contract" @change="saveSettings" placeholder="Enter token contract address, or select from dropdown"></b-form-input>
-                  <b-input-group-append>
-                    <b-button size="sm" :disabled="!validAddress(settings.contract)" @click="retrieveEvents" variant="primary">Retrieve</b-button>
-                    <b-dropdown size="sm" id="dropdown-left" text="" variant="link" v-b-popover.hover.ds500="'Some sample token contracts'" class="m-0 ml-1 p-0">
-                      <b-dropdown-item v-if="sampleContracts('all').length == 0" disabled>No sample contracts on this network</b-dropdown-item>
-                      <div v-for="(item, index) of sampleContracts('all')" v-bind:key="index">
-                        <b-dropdown-item @click="settings.contract = item.contract; saveSettings();">{{ index }}. {{ item.type.replace(/erc/, 'ERC-') }} {{ item.contract.substring(0, 8) + '...' + item.contract.slice(-6) + ' ' + item.name }}</b-dropdown-item>
-                      </div>
-                    </b-dropdown>
-                    <b-button :disabled="!settings.contract || !validAddress(settings.contract)" @click="copyToClipboard(settings.contract);" variant="link" v-b-popover.hover.ds500="'Copy ERC-20 contract address to clipboard'" class="m-0 ml-3 p-0"><b-icon-clipboard shift-v="+1" font-scale="1.1"></b-icon-clipboard></b-button>
-                    <b-button size="sm" :disabled="!validAddress(settings.contract)" :href="explorer + 'token/' + settings.contract + '#code'" variant="link" v-b-popover.hover.ds500="'View in explorer'" target="_blank" class="m-0 ml-2 p-0"><b-icon-link45deg shift-v="-4" font-scale="1.1"></b-icon-link45deg></b-button>
-                  </b-input-group-append>
-                </b-input-group> -->
-              <!-- </b-form-group> -->
-
-              <b-tabs v-model="settings.tableIndex" @changed="saveSettings();" content-class="mt-2" align="left">
+            <b-card v-if="settings.tabIndex == 1" no-header body-class="m-0 p-0" class="m-0 p-0 border-0">
+              <b-tabs card v-model="settings.tableIndex" @changed="saveSettings();" content-class="mt-2" align="left">
                 <template #tabs-start>
-                  <b-input-group size="sm" class="w-50">
-                    <b-form-input type="text" size="sm" id="explorer-contract" v-model="settings.contract" @change="saveSettings" placeholder="Enter token contract address, or select from dropdown"></b-form-input>
-                    <b-input-group-append>
-                      <div>
-                        <b-dropdown size="sm" id="dropdown-left" text="" variant="link" v-b-popover.hover.ds500="'Some sample token contracts'" class="m-0 ml-1 p-0">
-                          <b-dropdown-item v-if="sampleContracts('all').length == 0" disabled>No sample contracts on this network</b-dropdown-item>
-                          <div v-for="(item, index) of sampleContracts('all')" v-bind:key="index">
-                            <b-dropdown-item @click="settings.contract = item.contract; saveSettings();">{{ index }}. {{ 'ERC-' + item.type }} {{ item.contract.substring(0, 8) + '...' + item.contract.slice(-6) + ' ' + item.name }}</b-dropdown-item>
-                          </div>
-                        </b-dropdown>
-                        <b-button size="sm" :disabled="!validAddress(settings.contract)" @click="retrieveEvents" variant="primary">Retrieve</b-button>
-                        <!-- <b-button :disabled="!settings.contract || !validAddress(settings.contract)" @click="copyToClipboard(settings.contract);" variant="link" v-b-popover.hover.ds500="'Copy ERC-20 contract address to clipboard'" class="m-0 ml-2 p-0"><b-icon-clipboard shift-v="+1" font-scale="1.1"></b-icon-clipboard></b-button> -->
-                        <!-- <b-button size="sm" :disabled="!validAddress(settings.contract)" :href="explorer + 'token/' + settings.contract + '#code'" variant="link" v-b-popover.hover.ds500="'View in explorer'" target="_blank" class="m-0 ml-2 mr-2 p-0"><b-icon-link45deg shift-v="-1" font-scale="1.2"></b-icon-link45deg></b-button> -->
-                      </div>
-                    </b-input-group-append>
-                  </b-input-group>
-                  <div>
-                    <b-badge pill variant="light" v-b-popover.hover.ds500="decimals != null && totalSupply && ('symbol: ' + symbol + ', name: ' + name + ', decimals: ' + decimals + ', totalSupply: ' + formatDecimals(totalSupply, decimals) + ' (' + formatDecimals(totalSupply, 0) + ')') || ''" style="min-width: 5.0rem; max-width: 15.0rem;" class="mt-2 ml-2 mr-4">
-                      {{ (type && ('ERC-' + type) || '') + ((symbol && (': ' + symbol)) || '') }}
-                    </b-badge>
+
+                  <div class="d-flex flex-wrap m-0 p-0">
+                    <div class="mt-0 pr-0" style="width: 25.0rem;">
+                      <b-form-input type="text" size="sm" id="explorer-contract" v-model="settings.contract" @change="saveSettings" placeholder="Enter token contract address, or select from dropdown"></b-form-input>
+                    </div>
+                    <div class="mt-0 pr-1">
+                      <b-dropdown size="sm" id="dropdown-left" text="" variant="link" v-b-popover.hover.ds500="'Some sample token contracts'" class="m-0 ml-1 p-0">
+                        <b-dropdown-item v-if="sampleContracts('all').length == 0" disabled>No sample contracts on this network</b-dropdown-item>
+                        <div v-for="(item, index) of sampleContracts('all')" v-bind:key="index">
+                          <b-dropdown-item @click="settings.contract = item.contract; saveSettings();">{{ index }}. {{ 'ERC-' + item.type }} {{ item.contract.substring(0, 8) + '...' + item.contract.slice(-6) + ' ' + item.name }}</b-dropdown-item>
+                        </div>
+                      </b-dropdown>
+                    </div>
+                    <div class="mt-0 pr-1">
+                      <b-button size="sm" :disabled="!validAddress(settings.contract)" @click="retrieveEvents" variant="primary">Retrieve</b-button>
+                    </div>
+                    <!-- <div class="mt-0 pr-1">
+                      <b-button :disabled="!settings.contract || !validAddress(settings.contract)" @click="copyToClipboard(settings.contract);" variant="link" v-b-popover.hover.ds500="'Copy ERC-20 contract address to clipboard'" class="m-0 ml-2 p-0"><b-icon-clipboard shift-v="+1" font-scale="1.1"></b-icon-clipboard></b-button>
+                    </div> -->
+                    <div class="mt-0 pr-1">
+                      <b-button size="sm" :disabled="!validAddress(settings.contract)" :href="explorer + 'token/' + settings.contract + '#code'" variant="link" v-b-popover.hover.ds500="'View in explorer'" target="_blank" class="m-0 ml-2 mr-2 p-0"><b-icon-link45deg shift-v="-1" font-scale="1.2"></b-icon-link45deg></b-button>
+                    </div>
+                    <div class="mt-0 pr-1" style="width: 20.0rem;">
+                      <b-badge pill variant="light" v-b-popover.hover.ds500="decimals != null && totalSupply && ('symbol: ' + symbol + ', name: ' + name + ', decimals: ' + decimals + ', totalSupply: ' + formatDecimals(totalSupply, decimals) + ' (' + formatDecimals(totalSupply, 0) + ')') || ''" class="mt-2 ml-2 mr-4">
+                        {{ (type && ('ERC-' + type) || '') + ((symbol && (': ' + symbol)) || '') }}
+                      </b-badge>
+                    </div>
+                    <div class="mt-0 flex-grow-1">
+                    </div>
                   </div>
                 </template>
-                <b-tab active>
+                <b-tab no-body active>
                   <template #title>
                     <span v-b-popover.hover.ds500="'Token Transfer, Approval and ApprovalForAll events'">Events</span>
                   </template>
                 </b-tab>
-                <b-tab>
+                <b-tab no-body>
                   <template #title>
                     <span v-b-popover.hover.ds500="'ERC-20 token balances, ERC-721 and ERC-1155 tokens'">Tokens</span>
                   </template>
                 </b-tab>
-                <b-tab>
+                <b-tab no-body>
                   <template #title>
                     <span v-b-popover.hover.ds500="'ERC-20 and ERC-721 Approvals state'">Approvals</span>
                   </template>
                 </b-tab>
-                <b-tab>
+                <b-tab no-body>
                   <template #title>
                     <span v-b-popover.hover.ds500="'ERC-721 and ERC-1155 ApprovalForAll state'">ApprovalForAll</span>
                   </template>
