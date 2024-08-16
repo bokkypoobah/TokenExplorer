@@ -183,7 +183,7 @@
                     </b-badge>
                   </div>
                 </template>
-                <b-tab>
+                <b-tab active>
                   <template #title>
                     <span v-b-popover.hover.ds500="'Token Transfer, Approval and ApprovalForAll events'">Events</span>
                   </template>
@@ -198,7 +198,7 @@
                     <span v-b-popover.hover.ds500="'ERC-20 and ERC-721 Approvals state'">Approvals</span>
                   </template>
                 </b-tab>
-                <b-tab active>
+                <b-tab>
                   <template #title>
                     <span v-b-popover.hover.ds500="'ERC-721 and ERC-1155 ApprovalForAll state'">ApprovalForAll</span>
                   </template>
@@ -238,7 +238,6 @@
                   </div>
                 </div>
                 <b-table small fixed striped :fields="eventsFields" :items="pagedSortedFilteredEvents" show-empty empty-html="Click [Retrieve] above" head-variant="light" class="mt-1">
-                <!-- <b-table small fixed striped :items="pagedSortedFilteredEvents" show-empty empty-html="Click [Retrieve] above" head-variant="light" class="mt-1"> -->
                   <template #cell(number)="data">
                       <font size="-1" class="text-muted">{{ parseInt(data.index) + ((settings.eventsTable.currentPage - 1) * settings.eventsTable.pageSize) + 1 }}</font>
                   </template>
@@ -415,10 +414,17 @@
                     </b-link>
                   </template>
                   <template #cell(tokens)="data">
-                    <font size="-2" class="text-muted">
-                      {{ formatNumber(data.item.tokens) }}
-                    </font>
-                    {{ formatDecimals(data.item.tokens, decimals) }}
+                    <div v-if="type == 20">
+                      <font size="-2" class="text-muted">
+                        {{ formatNumber(data.item.tokens) }}
+                      </font>
+                      {{ formatDecimals(data.item.tokens, decimals) }}
+                    </div>
+                    <div v-else-if="type == 721 || type == 1155">
+                      <b-badge pill @click="viewNonFungible(type, settings.contract, data.item.tokenId)" v-b-popover.hover.ds500="'Click to view token'" variant="info">
+                        {{ data.item.tokenId }}
+                      </b-badge>
+                    </div>
                   </template>
                 </b-table>
               </div>
@@ -1824,7 +1830,7 @@
           tokensFieldsNonFungible: [
             { key: 'number', label: '#', sortable: false, thStyle: 'width: 5%;', tdClass: 'text-truncate' },
             { key: 'latestUpdate', label: 'Latest Update', sortable: false, thStyle: 'width: 30%;', thClass: 'text-left', tdClass: 'text-left' },
-            { key: 'tokenId', label: 'Token Id', sortable: false, thStyle: 'width: 30%;', thClass: 'text-right', tdClass: 'text-right' },
+            { key: 'tokens', label: 'Token Id', sortable: false, thStyle: 'width: 30%;', thClass: 'text-right', tdClass: 'text-right' },
             { key: 'owners', label: 'Owner(s)', sortable: false, thStyle: 'width: 35%;', thClass: 'text-left', tdClass: 'text-left' },
           ],
           approvalsFields: [
