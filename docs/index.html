@@ -196,7 +196,7 @@
                 <div class="mt-0 pr-1" style="width: 11.0rem;">
                   <b-form-input type="text" size="sm" v-model.trim="settings.filter" @change="saveSettings" debounce="600" placeholder="🔍 address regex"></b-form-input>
                 </div>
-                <div class="mt-0 pr-1" style="width: 11.0rem;">
+                <div v-if="type == 721 || type == 1155" class="mt-0 pr-1" style="width: 11.0rem;">
                   <b-form-input type="text" size="sm" v-model.trim="settings.tokenIdFilter" @change="saveSettings" debounce="600" placeholder="🔍 tokenid regex"></b-form-input>
                 </div>
                 <div class="mt-0 pr-1" style="width: 11.0rem;">
@@ -1011,40 +1011,45 @@
             // console.log(now() + " sortedFilteredEvents");
             const results = [];
             const { regex, tokenIdRegex, blockTxHashRegex } = this.filterRegexes;
-            for (const event of this.events) {
+            for (const item of this.events) {
               let include = true;
               if (regex) {
-                if (event.type == "Transfer") {
-                  if (event.eventType == 721) {
-                    if (!(regex.test(event.from) || regex.test(event.to) || regex.test(event.txHash) || regex.test(event.blockNumber.toString()) || regex.test(event.tokenId.toString()))) {
+                if (item.type == "Transfer") {
+                  if (item.eventType == 721) {
+                    if (!(regex.test(item.from) || regex.test(item.to) || regex.test(item.txHash) || regex.test(item.blockNumber.toString()) || regex.test(item.tokenId.toString()))) {
                       include = false;
                     }
                   } else {
-                    if (!(regex.test(event.from) || regex.test(event.to) || regex.test(event.txHash) || regex.test(event.blockNumber.toString()))) {
+                    if (!(regex.test(item.from) || regex.test(item.to) || regex.test(item.txHash) || regex.test(item.blockNumber.toString()))) {
                       include = false;
                     }
                   }
-                } else if (event.type == "TransferSingle") {
-                  if (!(regex.test(event.from) || regex.test(event.to) || regex.test(event.txHash) || regex.test(event.blockNumber.toString()) || regex.test(event.tokenId.toString()))) {
+                } else if (item.type == "TransferSingle") {
+                  if (!(regex.test(item.from) || regex.test(item.to) || regex.test(item.txHash) || regex.test(item.blockNumber.toString()) || regex.test(item.tokenId.toString()))) {
                     include = false;
                   }
-                } else if (event.type == "TransferBatch") {
+                } else if (item.type == "TransferBatch") {
                   // TODO: Scan tokenIds
-                  if (!(regex.test(event.from) || regex.test(event.to) || regex.test(event.txHash) || regex.test(event.blockNumber.toString()))) {
+                  if (!(regex.test(item.from) || regex.test(item.to) || regex.test(item.txHash) || regex.test(item.blockNumber.toString()))) {
                     include = false;
                   }
-                } else if (event.type == "Approval") {
-                  if (!(regex.test(event.owner) || regex.test(event.spender) || regex.test(event.txHash) || regex.test(event.blockNumber))) {
+                } else if (item.type == "Approval") {
+                  if (!(regex.test(item.owner) || regex.test(item.spender) || regex.test(item.txHash) || regex.test(item.blockNumber))) {
                     include = false;
                   }
-                } else if (event.type == "ApprovalForAll") {
-                  if (!(regex.test(event.owner) || regex.test(event.operator) || regex.test(event.txHash) || regex.test(event.blockNumber))) {
+                } else if (item.type == "ApprovalForAll") {
+                  if (!(regex.test(item.owner) || regex.test(item.operator) || regex.test(item.txHash) || regex.test(item.blockNumber))) {
                     include = false;
                   }
                 }
               }
+              if (include && blockTxHashRegex) {
+                if (!(blockTxHashRegex.test(item.txHash) || blockTxHashRegex.test(item.blockNumber))) {
+                  include = false;
+                }
+              }
               if (include) {
-                results.push(event);
+                results.push(item);
               }
             }
             if (this.settings.eventsTable.sortOption == "txorderasc") {
@@ -1081,12 +1086,13 @@
                   include = false;
                 }
               }
-              if (tokenIdRegex && (this.type == 721 || this.type == 1155)) {
+              if (include && tokenIdRegex && (this.type == 721 || this.type == 1155)) {
                 if (!(tokenIdRegex.test(item.tokenId))) {
                   include = false;
                 }
               }
-              if (blockTxHashRegex) {
+              if (include && blockTxHashRegex) {
+                console.log(JSON.stringify(item));
                 if (!(blockTxHashRegex.test(item.txHash) || blockTxHashRegex.test(item.blockNumber))) {
                   include = false;
                 }
@@ -1231,12 +1237,13 @@
                   include = false;
                 }
               }
-              if (tokenIdRegex && this.type == 721) {
+              if (include && tokenIdRegex && this.type == 721) {
                 if (!(tokenIdRegex.test(item.tokenId))) {
                   include = false;
                 }
               }
-              if (blockTxHashRegex) {
+              if (include && blockTxHashRegex) {
+                console.log(JSON.stringify(item));
                 if (!(blockTxHashRegex.test(item.txHash) || blockTxHashRegex.test(item.blockNumber))) {
                   include = false;
                 }
