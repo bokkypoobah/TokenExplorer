@@ -208,14 +208,14 @@
               </b-tabs>
 
               <div class="d-flex flex-wrap m-0 p-0">
-                <div v-if="type == 721 || type == 1155" class="mt-0 pr-1" style="width: 11.0rem;">
-                  <b-form-input type="text" size="sm" v-model.trim="settings.filter.tokenId" @change="saveSettings" debounce="600" placeholder="🔍 tokenid regex"></b-form-input>
+                <div class="mt-0 pr-1" style="width: 10.0rem;">
+                  <b-form-input :disabled="type != 721 && type != 1155" type="text" size="sm" v-model.trim="settings.filter.tokenId" @change="saveSettings" debounce="600" v-b-popover.hover.ds500="'Regex search'" placeholder="🔍 tokenid"></b-form-input>
                 </div>
-                <div class="mt-0 pr-1" style="width: 11.0rem;">
-                  <b-form-input type="text" size="sm" v-model.trim="settings.filter.address" @change="saveSettings" debounce="600" placeholder="🔍 address regex"></b-form-input>
+                <div class="mt-0 pr-1" style="width: 10.0rem;">
+                  <b-form-input type="text" size="sm" v-model.trim="settings.filter.address" @change="saveSettings" debounce="600" v-b-popover.hover.ds500="'Regex search'" placeholder="🔍 address"></b-form-input>
                 </div>
-                <div class="mt-0 pr-1" style="width: 11.0rem;">
-                  <b-form-input type="text" size="sm" v-model.trim="settings.filter.blockTxHash" @change="saveSettings" debounce="600" placeholder="🔍 block/txhash regex"></b-form-input>
+                <div class="mt-0 pr-1" style="width: 10.0rem;">
+                  <b-form-input type="text" size="sm" v-model.trim="settings.filter.blockTxHash" @change="saveSettings" debounce="600" v-b-popover.hover.ds500="'Regex search'" placeholder="🔍 block#/txhash"></b-form-input>
                 </div>
                 <div class="mt-0 flex-grow-1">
                 </div>
