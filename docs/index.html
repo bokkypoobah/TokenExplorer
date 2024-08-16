@@ -208,14 +208,14 @@
               </b-tabs>
 
               <div class="d-flex flex-wrap m-0 p-0">
-                <div class="mt-0 pr-1" style="width: 11.0rem;">
-                  <b-form-input type="text" size="sm" v-model.trim="settings.filter" @change="saveSettings" debounce="600" placeholder="🔍 address regex"></b-form-input>
-                </div>
                 <div v-if="type == 721 || type == 1155" class="mt-0 pr-1" style="width: 11.0rem;">
-                  <b-form-input type="text" size="sm" v-model.trim="settings.tokenIdFilter" @change="saveSettings" debounce="600" placeholder="🔍 tokenid regex"></b-form-input>
+                  <b-form-input type="text" size="sm" v-model.trim="settings.filter.tokenId" @change="saveSettings" debounce="600" placeholder="🔍 tokenid regex"></b-form-input>
                 </div>
                 <div class="mt-0 pr-1" style="width: 11.0rem;">
-                  <b-form-input type="text" size="sm" v-model.trim="settings.blockTxHashFilter" @change="saveSettings" debounce="600" placeholder="🔍 block/txhash regex"></b-form-input>
+                  <b-form-input type="text" size="sm" v-model.trim="settings.filter.address" @change="saveSettings" debounce="600" placeholder="🔍 address regex"></b-form-input>
+                </div>
+                <div class="mt-0 pr-1" style="width: 11.0rem;">
+                  <b-form-input type="text" size="sm" v-model.trim="settings.filter.blockTxHash" @change="saveSettings" debounce="600" placeholder="🔍 block/txhash regex"></b-form-input>
                 </div>
                 <div class="mt-0 flex-grow-1">
                 </div>
@@ -820,9 +820,14 @@
 
             // --- New ---
             contract: null,
-            filter: null,
-            tokenIdFilter: null,
-            blockTxHashFilter: null,
+            filter: {
+              tokenId: null,
+              address: null,
+              blockTxHash: null,
+            },
+            // filter: null,
+            // tokenIdFilter: null,
+            // blockTxHashFilter: null,
             tableIndex: 0,
             eventsTable: {
               currentPage: 1,
@@ -846,7 +851,7 @@
               pageSize: 15,
               sortOption: 'txorderdsc',
             },
-            version: 2,
+            version: 3,
           },
 
           type: null,
@@ -1014,40 +1019,40 @@
 
           // --- Explorer: ---
           filterRegexes() {
-            console.log(now() + " INFO filterRegexes: " + this.settings.filter + "/" + this.settings.tokenIdFilter + "/" + this.settings.blockTxHashFilter);
-            let regex = null;
-            if (this.settings.filter != null && this.settings.filter.length > 0) {
-              try {
-                regex = new RegExp(this.settings.filter, 'i');
-              } catch (e) {
-                console.log(now() + " ERROR filterRegexes - regex error: " + e.message);
-                regex = new RegExp(/thequickbrowndogjumpsoverthelazyfox/, 'i');
-              }
-            }
+            console.log(now() + " INFO filterRegexes: " + this.settings.filter.tokenId + "/" + this.settings.filter.address + "/" + this.settings.filter.blockTxHash);
             let tokenIdRegex = null;
-            if (this.settings.tokenIdFilter != null && this.settings.tokenIdFilter.length > 0) {
+            if (this.settings.filter.tokenId != null && this.settings.filter.tokenId.length > 0) {
               try {
-                tokenIdRegex = new RegExp(this.settings.tokenIdFilter, 'i');
+                tokenIdRegex = new RegExp(this.settings.filter.tokenId, 'i');
               } catch (e) {
                 console.log(now() + " ERROR filterRegexes - tokenIdRegex error: " + e.message);
                 tokenIdRegex = new RegExp(/thequickbrowndogjumpsoverthelazyfox/, 'i');
               }
             }
-            let blockTxHashRegex = null;
-            if (this.settings.blockTxHashFilter != null && this.settings.blockTxHashFilter.length > 0) {
+            let addressRegex = null;
+            if (this.settings.filter.address != null && this.settings.filter.address.length > 0) {
               try {
-                blockTxHashRegex = new RegExp(this.settings.blockTxHashFilter, 'i');
+                addressRegex = new RegExp(this.settings.filter.address, 'i');
               } catch (e) {
-                console.log(now() + " ERROR filterRegexes - blockTxHashFilter error: " + e.message);
+                console.log(now() + " ERROR filterRegexes - address error: " + e.message);
+                addressRegex = new RegExp(/thequickbrowndogjumpsoverthelazyfox/, 'i');
+              }
+            }
+            let blockTxHashRegex = null;
+            if (this.settings.filter.blockTxHash != null && this.settings.filter.blockTxHash.length > 0) {
+              try {
+                blockTxHashRegex = new RegExp(this.settings.filter.blockTxHash, 'i');
+              } catch (e) {
+                console.log(now() + " ERROR filterRegexes - blockTxHash error: " + e.message);
                 blockTxHashRegex = new RegExp(/thequickbrowndogjumpsoverthelazyfox/, 'i');
               }
             }
-            return { regex, tokenIdRegex, blockTxHashRegex };
+            return { tokenIdRegex, addressRegex, blockTxHashRegex };
           },
           sortedFilteredEvents() {
             // console.log(now() + " sortedFilteredEvents");
             const results = [];
-            const { regex, tokenIdRegex, blockTxHashRegex } = this.filterRegexes;
+            const { tokenIdRegex, addressRegex, blockTxHashRegex } = this.filterRegexes;
             const tokensMetadata = this.metadata[this.chainId] && this.metadata[this.chainId][this.settings.contract] && this.metadata[this.chainId][this.settings.contract].tokens || {};
             for (const item of this.events) {
               const metadata = tokensMetadata[item.tokenId] || null;
@@ -1065,25 +1070,25 @@
                 }
               }
               let include = true;
-              if (regex) {
+              if (addressRegex) {
                 if (item.type == "Transfer") {
-                  if (!(regex.test(item.from) || regex.test(item.to) || regex.test(item.txHash) || regex.test(item.blockNumber.toString()))) {
+                  if (!(addressRegex.test(item.from) || addressRegex.test(item.to) || addressRegex.test(item.txHash) || addressRegex.test(item.blockNumber.toString()))) {
                     include = false;
                   }
                 } else if (item.type == "TransferSingle") {
-                  if (!(regex.test(item.from) || regex.test(item.to) || regex.test(item.txHash) || regex.test(item.blockNumber.toString()) || regex.test(item.tokenId.toString()))) {
+                  if (!(addressRegex.test(item.from) || addressRegex.test(item.to) || addressRegex.test(item.txHash) || addressRegex.test(item.blockNumber.toString()) || addressRegex.test(item.tokenId.toString()))) {
                     include = false;
                   }
                 } else if (item.type == "TransferBatch") {
-                  if (!(regex.test(item.from) || regex.test(item.to) || regex.test(item.txHash) || regex.test(item.blockNumber.toString()))) {
+                  if (!(addressRegex.test(item.from) || addressRegex.test(item.to) || addressRegex.test(item.txHash) || addressRegex.test(item.blockNumber.toString()))) {
                     include = false;
                   }
                 } else if (item.type == "Approval") {
-                  if (!(regex.test(item.owner) || regex.test(item.spender) || regex.test(item.txHash) || regex.test(item.blockNumber))) {
+                  if (!(addressRegex.test(item.owner) || addressRegex.test(item.spender) || addressRegex.test(item.txHash) || addressRegex.test(item.blockNumber))) {
                     include = false;
                   }
                 } else if (item.type == "ApprovalForAll") {
-                  if (!(regex.test(item.owner) || regex.test(item.operator) || regex.test(item.txHash) || regex.test(item.blockNumber))) {
+                  if (!(addressRegex.test(item.owner) || addressRegex.test(item.operator) || addressRegex.test(item.txHash) || addressRegex.test(item.blockNumber))) {
                     include = false;
                   }
                 }
@@ -1096,9 +1101,9 @@
                 } else if (this.type == 1155 && item.type == "TransferBatch") {
                   let found = false;
                   for (const [index, tokenId] of item.tokenIds.entries()) {
-                    console.log(index + " " + tokenId);
+                    // console.log(index + " " + tokenId);
                     if (tokenIdRegex.test(tokenId)) {
-                      console.log("FOUND: " + JSON.stringify(item.tokenIds));
+                      // console.log("FOUND: " + JSON.stringify(item.tokenIds));
                       found = true;
                       break;
                     }
@@ -1160,11 +1165,11 @@
           sortedFilteredTokens() {
             console.log(now() + " sortedFilteredTokens - this.tokens[0..3]: " + JSON.stringify(this.tokens.slice(0, 4), null, 2));
             const results = [];
-            const { regex, tokenIdRegex, blockTxHashRegex } = this.filterRegexes;
+            const { tokenIdRegex, addressRegex, blockTxHashRegex } = this.filterRegexes;
             for (const item of this.tokens) {
               let include = true;
-              if (regex) {
-                if (!(regex.test(item.owner))) {
+              if (addressRegex) {
+                if (!(addressRegex.test(item.owner))) {
                   include = false;
                 }
               }
@@ -1311,11 +1316,11 @@
           sortedFilteredApprovals() {
             // console.log(now() + " sortedFilteredApprovals");
             const results = [];
-            const { regex, tokenIdRegex, blockTxHashRegex } = this.filterRegexes;
+            const { tokenIdRegex, addressRegex, blockTxHashRegex } = this.filterRegexes;
             for (const item of this.approvals) {
               let include = true;
-              if (regex) {
-                if (!(regex.test(item.owner) || regex.test(item.spender))) {
+              if (addressRegex) {
+                if (!(addressRegex.test(item.owner) || addressRegex.test(item.spender))) {
                   include = false;
                 }
               }
@@ -1396,11 +1401,11 @@
           sortedFilteredApprovalForAlls() {
             // console.log(now() + " sortedFilteredApprovalForAlls");
             const results = [];
-            const { regex, tokenIdRegex, blockTxHashRegex } = this.filterRegexes;
+            const { tokenIdRegex, addressRegex, blockTxHashRegex } = this.filterRegexes;
             for (const item of this.approvalForAlls) {
               let include = true;
-              if (regex) {
-                if (!(regex.test(item.owner) || regex.test(item.operator))) {
+              if (addressRegex) {
+                if (!(addressRegex.test(item.owner) || addressRegex.test(item.operator))) {
                   include = false;
                 }
               }
