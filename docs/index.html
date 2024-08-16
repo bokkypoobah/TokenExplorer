@@ -821,24 +821,24 @@
             tableIndex: 0,
             eventsTable: {
               currentPage: 1,
-              pageSize: 10,
+              pageSize: 15,
               sortOption: 'txorderdsc',
             },
             tokensTable: {
               currentPage: 1,
-              pageSize: 10,
+              pageSize: 15,
               sortOptionERC20: 'txorderdsc',
               sortOptionERC721: 'txorderdsc',
               sortOptionERC1155: 'txorderdsc',
             },
             approvalsTable: {
               currentPage: 1,
-              pageSize: 10,
+              pageSize: 15,
               sortOption: 'txorderdsc',
             },
             approvalForAllsTable: {
               currentPage: 1,
-              pageSize: 10,
+              pageSize: 15,
               sortOption: 'txorderdsc',
             },
             version: 2,
@@ -1254,7 +1254,7 @@
             return results;
           },
           pagedSortedFilteredTokens() {
-            return this.sortedFilteredTokens.slice((this.settings.eventsTable.currentPage - 1) * this.settings.eventsTable.pageSize, this.settings.eventsTable.currentPage * this.settings.eventsTable.pageSize);
+            return this.sortedFilteredTokens.slice((this.settings.tokensTable.currentPage - 1) * this.settings.tokensTable.pageSize, this.settings.tokensTable.currentPage * this.settings.tokensTable.pageSize);
           },
 
           sortedFilteredApprovals() {
