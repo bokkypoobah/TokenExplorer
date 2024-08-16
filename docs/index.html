@@ -66,7 +66,7 @@
           <b-card class="m-0 p-0 border-0" body-class="m-1 p-0">
 
             <b-modal ref="nonfungiblemodal" v-model="modalNonFungible.show" hide-footer header-class="m-0 px-3 py-2" body-bg-variant="light" size="lg">
-              <template #modal-title>{{ modalNonFungible.type.replace(/erc/, "ERC-") + ' Non-Fungible Token' }}</template>
+              <template #modal-title>{{ "ERC-" + modalNonFungible.type + ' Non-Fungible Token' }}</template>
 
               <b-form-group label="contract:" label-for="nonfungiblemodal-contract" label-size="sm" label-cols-sm="2" label-align-sm="right" class="mx-0 my-1 p-0">
                 <b-input-group size="sm" class="w-100">
@@ -168,7 +168,7 @@
                         <b-dropdown size="sm" id="dropdown-left" text="" variant="link" v-b-popover.hover.ds500="'Some sample token contracts'" class="m-0 ml-1 p-0">
                           <b-dropdown-item v-if="sampleContracts('all').length == 0" disabled>No sample contracts on this network</b-dropdown-item>
                           <div v-for="(item, index) of sampleContracts('all')" v-bind:key="index">
-                            <b-dropdown-item @click="settings.contract = item.contract; saveSettings();">{{ index }}. {{ item.type.replace(/erc/, 'ERC-') }} {{ item.contract.substring(0, 8) + '...' + item.contract.slice(-6) + ' ' + item.name }}</b-dropdown-item>
+                            <b-dropdown-item @click="settings.contract = item.contract; saveSettings();">{{ index }}. {{ 'ERC-' + item.type }} {{ item.contract.substring(0, 8) + '...' + item.contract.slice(-6) + ' ' + item.name }}</b-dropdown-item>
                           </div>
                         </b-dropdown>
                         <b-button size="sm" :disabled="!validAddress(settings.contract)" @click="retrieveEvents" variant="primary">Retrieve</b-button>
@@ -179,7 +179,7 @@
                   </b-input-group>
                   <div>
                     <b-badge pill variant="light" v-b-popover.hover.ds500="decimals && totalSupply && (name + ' ' + decimals + ' ' + formatDecimals(totalSupply, decimals)) || ''" style="min-width: 5.0rem; max-width: 15.0rem;" class="mt-2 ml-2 mr-4">
-                      {{ (type && (type.replace(/erc/, "ERC-")) || '') + ((symbol && (': ' + symbol)) || '') }}
+                      {{ (type && ('ERC-' + type) || '') + ((symbol && (': ' + symbol)) || '') }}
                     </b-badge>
                   </div>
                 </template>
@@ -294,17 +294,17 @@
                     </div>
                   </template>
                   <template #head(tokensTokenId)="data">
-                    {{ type == "erc721" ? "Token Id" : ( type == "erc1155" ? "Token Id(s)" : "Tokens") }}
+                    {{ type == 721 ? "Token Id" : ( type == 1155 ? "Token Id(s)" : "Tokens") }}
                   </template>
                   <template #cell(tokensTokenId)="data">
                     <div v-if="data.item.type == 'Transfer'">
-                      <div v-if="data.item.eventType == 'erc20'">
+                      <div v-if="data.item.eventType == 20">
                         <font size="-2" class="text-muted">
                           {{ formatNumber(data.item.tokens) }}
                         </font>
                         {{ formatDecimals(data.item.tokens, decimals) }}
                       </div>
-                      <div v-else-if="data.item.eventType == 'erc721'">
+                      <div v-else-if="data.item.eventType == 721">
                         <b-badge pill @click="viewNonFungible(type, settings.contract, data.item.tokenId)" v-b-popover.hover.ds500="'Click to view token'" variant="info">
                           {{ data.item.tokenId }}
                         </b-badge>
@@ -324,7 +324,7 @@
                       </span>
                     </div>
                     <div v-else-if="data.item.type == 'Approval'">
-                      <div v-if="data.item.eventType == 'erc20'">
+                      <div v-if="data.item.eventType == 20">
                         <font size="-2" class="text-muted">
                           {{ formatNumber(data.item.tokens) }}
                         </font>
@@ -383,7 +383,7 @@
                     <b-form-select size="sm" v-model="settings.tokensTable.pageSize" @change="saveSettings();" :options="pageSizes" v-b-popover.hover.bottom="'Yeah. Page size'"></b-form-select>
                   </div>
                 </div>
-                <b-table small fixed striped :fields="type == 'erc20' ? tokensFieldsFungible : tokensFieldsNonFungible" :items="pagedSortedFilteredTokens" show-empty empty-html="Click [Retrieve] above" head-variant="light" class="mt-1">
+                <b-table small fixed striped :fields="type == 20 ? tokensFieldsFungible : tokensFieldsNonFungible" :items="pagedSortedFilteredTokens" show-empty empty-html="Click [Retrieve] above" head-variant="light" class="mt-1">
                   <template #cell(number)="data">
                       <font size="-1" class="text-muted">{{ parseInt(data.index) + ((settings.tokensTable.currentPage - 1) * settings.tokensTable.pageSize) + 1 }}</font>
                   </template>
@@ -407,7 +407,7 @@
                     </b-link>
                   </template>
                   <template #head(owners)="data">
-                    {{ type == "erc721" ? "Owner" : "Owner(s)" }}
+                    {{ type == 721 ? "Owner" : "Owner(s)" }}
                   </template>
                   <template #cell(owners)="data">
                     <b-link size="sm" :href="explorer + 'token/' + settings.contract + '?a=' + data.item.owner" variant="link" v-b-popover.hover.ds500="data.item.owner" target="_blank">
@@ -484,10 +484,10 @@
                     </b-link>
                   </template>
                   <template #head(tokens)="data">
-                    {{ type == "erc721" ? "Token Id" : "Tokens" }}
+                    {{ type == 721 ? "Token Id" : "Tokens" }}
                   </template>
                   <template #cell(tokens)="data">
-                    <div v-if="type == 'erc20'">
+                    <div v-if="type == 20">
                       <font size="-2" class="text-muted">
                         {{ formatNumber(data.item.tokens) }}
                       </font>
@@ -500,7 +500,7 @@
                         </span>
                       </b-link>
                     </div>
-                    <div v-if="type == 'erc721'">
+                    <div v-if="type == 721">
                       <b-badge pill @click="viewNonFungible(type, settings.contract, data.item.tokenId)" v-b-popover.hover.ds500="'Click to view token'" variant="info">
                         {{ data.item.tokenId }}
                       </b-badge>
@@ -1920,7 +1920,7 @@
               let include = true;
               if (regex) {
                 if (event.type == "Transfer") {
-                  if (event.eventType == "erc721") {
+                  if (event.eventType == 721) {
                     if (!(regex.test(event.from) || regex.test(event.to) || regex.test(event.txHash) || regex.test(event.blockNumber.toString()) || regex.test(event.tokenId.toString()))) {
                       include = false;
                     }
@@ -1986,7 +1986,7 @@
                   include = false;
                 }
               }
-              if (tokenIdRegex && (this.type == "erc721" || this.type == "erc1155")) {
+              if (tokenIdRegex && (this.type == 721 || this.type == 1155)) {
                 if (!(tokenIdRegex.test(item.tokenId))) {
                   include = false;
                 }
@@ -2000,7 +2000,7 @@
                 results.push(item);
               }
             }
-            if (this.type == "erc20") {
+            if (this.type == 20) {
               if (this.settings.tokensTable.sortOptionERC20 == "txorderasc") {
                 results.sort((a, b) => {
                   if (a.blockNumber == b.blockNumber) {
@@ -2034,7 +2034,7 @@
                   return b.tokens - a.tokens;
                 });
               }
-            } else if (this.type == "erc721") {
+            } else if (this.type == 721) {
               if (this.settings.tokensTable.sortOptionERC721 == "txorderasc") {
                 results.sort((a, b) => {
                   if (a.blockNumber == b.blockNumber) {
@@ -2068,7 +2068,7 @@
                   return ('' + b.owner).localeCompare(a.owner);
                 });
               }
-            } else if (this.type == "erc1155") {
+            } else if (this.type == 1155) {
               if (this.settings.tokensTable.sortOptionERC1155 == "txorderasc") {
                 results.sort((a, b) => {
                   if (a.blockNumber == b.blockNumber) {
@@ -2139,7 +2139,7 @@
                   include = false;
                 }
               }
-              if (tokenIdRegex && this.type == "erc721") {
+              if (tokenIdRegex && this.type == 721) {
                 if (!(tokenIdRegex.test(item.tokenId))) {
                   include = false;
                 }
@@ -2186,7 +2186,7 @@
               let include = true;
               if (regex) {
                 if (event.type == "Transfer") {
-                  if (event.eventType == "erc721") {
+                  if (event.eventType == 721) {
                     if (!(regex.test(event.from) || regex.test(event.to) || regex.test(event.txHash) || regex.test(event.blockNumber.toString()) || regex.test(event.tokenId.toString()))) {
                       include = false;
                     }
@@ -3041,19 +3041,19 @@
             Vue.set(this.modalNonFungible, 'tokenId', tokenId);
 
             const provider = new ethers.providers.Web3Provider(window.ethereum);
-            const interface = new ethers.Contract(contract, type == "erc721" ? ERC721ABI : ERC1155ABI, provider);
+            const interface = new ethers.Contract(contract, type == 721 ? ERC721ABI : ERC1155ABI, provider);
             Vue.set(this.modalNonFungible, 'logs', []);
-            this.modalNonFungible.logs.push({ log:now() + " " + type.replace(/erc/, "ERC-") + " @ " + contract });
+            this.modalNonFungible.logs.push({ log:now() + " ERC-" + type + " @ " + contract });
             let erc721Owner = null;
             let uriResult = null;
-            if (type == "erc721") {
+            if (type == 721) {
               erc721Owner = await interface.ownerOf(tokenId);
               this.modalNonFungible.logs.push({ log:now() + " erc721.ownerOf(" + tokenId + ") returned '" + erc721Owner + "'"});
             }
-            if (type == "erc721") {
+            if (type == 721) {
               uriResults = await interface.tokenURI(tokenId);
               this.modalNonFungible.logs.push({ log:now() + " erc721.tokenURI(" + tokenId + ") returned '" + uriResults + "'" });
-            } else if (type == "erc1155") {
+            } else if (type == 1155) {
               uriResults = await interface.uri(tokenId);
               this.modalNonFungible.logs.push({ log:now() + " erc1155.uri(" + tokenId + ") returned '" + uriResults + "'" });
             }
@@ -3065,7 +3065,7 @@
               uriResults = "https://ipfs.io/ipfs/" + uriResults.substring(7);
               this.modalNonFungible.logs.push({ log:now() + " Updated URI to '" + uriResults + "'" });
             }
-            if (type == "erc1155") {
+            if (type == 1155) {
               if (uriResults.indexOf("0x{id}") >= 0) {
                 uriResults = uriResults.replace(/0x{id}/, tokenId);
                 this.modalNonFungible.logs.push({ log:now() + " Updated URI to '" + uriResults + "'" });
@@ -3124,7 +3124,7 @@
             } catch (e) {
             }
             if (supportsERC721) {
-              this.type = "erc721";
+              this.type = 721;
               try {
                 this.symbol = await erc721.symbol();
               } catch (e) {
@@ -3133,7 +3133,7 @@
               try {
                 supportsERC1155 = await erc165.supportsInterface(ERC1155_INTERFACE);
                 if (supportsERC1155) {
-                  this.type = "erc1155";
+                  this.type = 1155;
                 }
               } catch (e) {
               }
@@ -3148,7 +3148,7 @@
               } catch (e) {
               }
               if (this.decimals != null && this.totalSupply) {
-                this.type = "erc20";
+                this.type = 20;
                 try {
                   this.symbol = await erc20.symbol();
                 } catch (e) {
@@ -3159,11 +3159,11 @@
                 }
               }
             }
-            if (this.type == "erc20") {
+            if (this.type == 20) {
               this.description = "ERC-20 " + this.symbol + " " + this.name + " " + this.decimals + " " + this.formatDecimals(this.totalSupply, this.decimals);
-            } else if (this.type == "erc721") {
+            } else if (this.type == 721) {
               this.description = "ERC-721 " + this.symbol;
-            } else if (this.type == "erc1155") {
+            } else if (this.type == 1155) {
               this.description = "ERC-1155";
             } else {
               this.description = "Not a token contract";
@@ -3223,11 +3223,11 @@
             // const startBlock = latestBlockNumber - 10000;
             await getLogs(startBlock, latestBlockNumber);
             // console.log(now() + " INFO retrieveEvents END - events: " + JSON.stringify(events, null, 2));
-            if (this.type == "erc20") {
+            if (this.type == 20) {
               this.collateERC20();
-            } else if (this.type == "erc721") {
+            } else if (this.type == 721) {
               this.collateERC721();
-            } else if (this.type == "erc1155") {
+            } else if (this.type == 1155) {
               this.collateERC1155();
             }
           },
