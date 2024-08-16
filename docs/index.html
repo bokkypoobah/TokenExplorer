@@ -1048,7 +1048,24 @@
             // console.log(now() + " sortedFilteredEvents");
             const results = [];
             const { regex, tokenIdRegex, blockTxHashRegex } = this.filterRegexes;
+            const tokensMetadata = this.metadata[this.chainId] && this.metadata[this.chainId][this.settings.contract] && this.metadata[this.chainId][this.settings.contract].tokens || {};
+            // console.log("tokensMetadata: " + JSON.stringify(tokensMetadata));
+
             for (const item of this.events) {
+              const metadata = tokensMetadata[item.tokenId] || null;
+              let metadatas = null;
+              if (item.type == "TransferBatch") {
+                metadatas = [];
+                for (const [index, tokenId] of item.tokenIds.entries()) {
+                  metadatas.push({
+                    tokenId,
+                    value: item.values[index],
+                    name: tokensMetadata[tokenId] && tokensMetadata[tokenId].name || null,
+                    image: tokensMetadata[tokenId] && tokensMetadata[tokenId].image || null,
+                    attributes: tokensMetadata[tokenId] && tokensMetadata[tokenId].attributes || null,
+                  });
+                }
+              }
               let include = true;
               if (regex) {
                 if (item.type == "Transfer") {
@@ -1086,7 +1103,21 @@
                 }
               }
               if (include) {
-                results.push(item);
+                if (metadatas) {
+                  results.push({
+                    ...item,
+                    tokens: metadatas,
+                  });
+                } else if (metadata) {
+                  results.push({
+                    ...item,
+                    name: metadata.name,
+                    image: metadata.image,
+                    attributes: metadata.attributes,
+                  });
+                } else {
+                  results.push(item);
+                }
               }
             }
             if (this.settings.eventsTable.sortOption == "txorderasc") {
@@ -1109,6 +1140,7 @@
             return results;
           },
           pagedSortedFilteredEvents() {
+            console.log(now() + " pagedSortedFilteredEvents - this.tokens[0..3]: " + JSON.stringify(this.sortedFilteredEvents.slice(0, 4), null, 2));
             return this.sortedFilteredEvents.slice((this.settings.eventsTable.currentPage - 1) * this.settings.eventsTable.pageSize, this.settings.eventsTable.currentPage * this.settings.eventsTable.pageSize);
           },
 
@@ -1684,17 +1716,17 @@
               this.collateERC1155();
             }
             this.type, this.symbol, this.name, this.decimals, this.totalSupply
-            localStorage.tokenExplorerData = JSON.stringify({
-              version: 0,
-              type: this.type,
-              symbol: this.symbol,
-              name: this.name,
-              decimals: this.decimals,
-              events: this.events,
-              tokens: this.tokens,
-              approvals: this.approvals,
-              approvalForAlls: this.approvalForAlls,
-            });
+            // localStorage.tokenExplorerData = JSON.stringify({
+            //   version: 0,
+            //   type: this.type,
+            //   symbol: this.symbol,
+            //   name: this.name,
+            //   decimals: this.decimals,
+            //   events: this.events,
+            //   tokens: this.tokens,
+            //   approvals: this.approvals,
+            //   approvalForAlls: this.approvalForAlls,
+            // });
           },
 
           async collateERC20() {
@@ -1954,7 +1986,7 @@
                     }
                     metadata[this.settings.contract].tokens[token.tokenId] = {
                       name: token.name,
-                      description: token.description,
+                      // description: token.description,
                       image: token.image,
                       attributes: token.attributes,
                     };
@@ -2200,7 +2232,7 @@
           if ('tokenExplorerData' in localStorage) {
             const data = JSON.parse(localStorage.tokenExplorerData);
             if ('version' in data && data.version == 0) {
-              console.log(now() + " mounted - data: " + JSON.stringify(data, null, 2));
+              // console.log(now() + " mounted - data: " + JSON.stringify(data, null, 2));
               this.type = data.type;
               this.symbol = data.symbol;
               this.name = data.name;
