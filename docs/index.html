@@ -1683,6 +1683,18 @@
             } else if (this.type == 1155) {
               this.collateERC1155();
             }
+            this.type, this.symbol, this.name, this.decimals, this.totalSupply
+            localStorage.tokenExplorerData = JSON.stringify({
+              version: 0,
+              type: this.type,
+              symbol: this.symbol,
+              name: this.name,
+              decimals: this.decimals,
+              events: this.events,
+              tokens: this.tokens,
+              approvals: this.approvals,
+              approvalForAlls: this.approvalForAlls,
+            });
           },
 
           async collateERC20() {
@@ -2184,6 +2196,20 @@
           if ('tokenExplorerMetadata' in localStorage) {
             this.metadata = JSON.parse(localStorage.tokenExplorerMetadata);
             // console.log(now() + " mounted - this.metadata: " + JSON.stringify(this.metadata));
+          }
+          if ('tokenExplorerData' in localStorage) {
+            const data = JSON.parse(localStorage.tokenExplorerData);
+            if ('version' in data && data.version == 0) {
+              console.log(now() + " mounted - data: " + JSON.stringify(data, null, 2));
+              this.type = data.type;
+              this.symbol = data.symbol;
+              this.name = data.name;
+              this.decimals = data.decimals;
+              this.events = data.events;
+              this.tokens = data.tokens;
+              this.approvals = data.approvals;
+              this.approvalForAlls = data.approvalForAlls;
+            }
           }
           if ('tokenExplorerSettings' in localStorage) {
             const tempSettings = JSON.parse(localStorage.tokenExplorerSettings);
