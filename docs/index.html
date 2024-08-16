@@ -1536,7 +1536,7 @@
             <div class="mt-0 flex-grow-1">
             </div>
             <div class="mt-0 pl-1 pr-1">
-              gm, and enjoy! <i>TokenExplorer</i> &copy; Bok Consulting Pty Ltd 2024
+              gm, and enjoy! <b-link href="https://github.com/bokkypoobah/TokenExplorer" target="_blank"><i>TokenExplorer</i></b-link> &copy; Bok Consulting Pty Ltd 2024
             </div>
           </div>
         </b-card>
@@ -2036,7 +2036,7 @@
           },
 
           sortedFilteredTokens() {
-            // console.log(now() + " sortedFilteredTokens");
+            console.log(now() + " sortedFilteredTokens - this.tokens[0..3]: " + JSON.stringify(this.tokens.slice(0, 4), null, 2));
             const results = [];
             const { regex, tokenIdRegex, blockTxHashRegex } = this.filterRegexes;
             for (const item of this.tokens) {
