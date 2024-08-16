@@ -1708,8 +1708,8 @@
             { value: 'ownerdsc', text: '▼ Owner' },
             { value: 'spenderasc', text: '▲ Spender' },
             { value: 'spenderdsc', text: '▼ Spender' },
-            { value: 'tokensasc', text: '▲ Tokens/Token Id' },
-            { value: 'tokensdsc', text: '▼ Tokens/Token Id' },
+            { value: 'tokensasc', text: '▲ Token[s/ Id]' },
+            { value: 'tokensdsc', text: '▼ Token[s/ Id]' },
           ],
           erc721ApprovalsSortOptions: [
             { value: 'txorderasc', text: '▲ Latest Update' },
@@ -2127,18 +2127,13 @@
 
           sortedFilteredApprovals() {
             // TODO
-            // console.log(now() + " sortedFilteredApprovals - this.settings.erc20.eventsTable: " + JSON.stringify(this.settings.erc20.eventsTable));
+            // console.log(now() + " sortedFilteredApprovals");
             const results = [];
             const { regex, tokenIdRegex, blockTxHashRegex } = this.filterRegexes;
 
             for (const item of this.approvals) {
               let include = true;
               console.log(JSON.stringify(item));
-              // if (regex) {
-              //   if (!(regex.test(allowance.owner) || regex.test(allowance.spender) || regex.test(allowance.tokens.txHash) || regex.test(allowance.tokens.blockNumber))) {
-              //     include = false;
-              //   }
-              // }
               if (regex) {
                 if (!(regex.test(item.owner) || regex.test(item.spender))) {
                   include = false;
@@ -2179,7 +2174,7 @@
             return results;
           },
           pagedSortedFilteredApprovals() {
-            return this.sortedFilteredApprovals.slice((this.settings.eventsTable.currentPage - 1) * this.settings.eventsTable.pageSize, this.settings.eventsTable.currentPage * this.settings.eventsTable.pageSize);
+            return this.sortedFilteredApprovals.slice((this.settings.approvalsTable.currentPage - 1) * this.settings.approvalsTable.pageSize, this.settings.approvalsTable.currentPage * this.settings.approvalsTable.pageSize);
           },
 
           sortedFilteredApprovalForAlls() {
