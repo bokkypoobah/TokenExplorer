@@ -137,12 +137,14 @@
 
             <!-- Explorer: -->
             <b-card v-if="settings.tabIndex == 1" no-header body-class="m-0 p-0" class="m-0 p-0 border-0">
-              <b-tabs card v-model="settings.tableIndex" @changed="saveSettings();" content-class="mt-2" align="left">
+              <b-tabs card v-model="settings.tableIndex" @changed="saveSettings();" content-class="mt-1" align="left">
                 <template #tabs-start>
 
                   <div class="d-flex flex-wrap m-0 p-0">
                     <div class="mt-0 pr-0" style="width: 25.0rem;">
-                      <b-form-input type="text" size="sm" id="explorer-contract" v-model="settings.contract" @change="saveSettings" placeholder="Enter token contract address, or select from dropdown"></b-form-input>
+                      <b-form-group :state="!settings.contract || validAddress(settings.contract)" :invalid-feedback="'Invalid address'" class="m-0 p-0">
+                        <b-form-input type="text" size="sm" id="explorer-contract" v-model="settings.contract" @change="saveSettings" placeholder="Enter token contract address, or select from dropdown"></b-form-input>
+                      </b-form-group>
                     </div>
                     <div class="mt-0 pr-1">
                       <b-dropdown size="sm" id="dropdown-left" text="" variant="link" v-b-popover.hover.ds500="'Some sample token contracts'" class="m-0 ml-1 p-0">
@@ -355,13 +357,13 @@
                         {{ formatDecimals(data.item.tokens, decimals) }}
                       </div>
                       <div v-else-if="data.item.eventType == 721">
-                        <b-badge pill @click="viewNonFungible(type, settings.contract, data.item.tokenId)" v-b-popover.hover.ds500="'Click to view token'" variant="info">
+                        <b-badge v-if="data.item.tokenId" pill @click="viewNonFungible(type, settings.contract, data.item.tokenId)" v-b-popover.hover.ds500="'Click to view token'" variant="info">
                           {{ data.item.tokenId }}
                         </b-badge>
                       </div>
                     </div>
                     <div v-else-if="data.item.type == 'TransferSingle'">
-                      <b-badge pill @click="viewNonFungible(type, settings.contract, data.item.tokenId)" v-b-popover.hover.ds500="'Click to view token'" variant="info">
+                      <b-badge v-if="data.item.tokenId" pill @click="viewNonFungible(type, settings.contract, data.item.tokenId)" v-b-popover.hover.ds500="'Click to view token'" variant="info">
                         {{ data.item.tokenId }}
                       </b-badge>
                     </div>
@@ -381,7 +383,7 @@
                         {{ formatDecimals(data.item.tokens, decimals) }}
                       </div>
                       <div v-else>
-                        <b-badge pill @click="viewNonFungible(type, settings.contract, data.item.tokenId)" v-b-popover.hover.ds500="'Click to view token'" variant="info">
+                        <b-badge v-if="data.item.tokenId" pill @click="viewNonFungible(type, settings.contract, data.item.tokenId)" v-b-popover.hover.ds500="'Click to view token'" variant="info">
                           {{ data.item.tokenId }}
                         </b-badge>
                       </div>
@@ -434,7 +436,7 @@
                       {{ formatDecimals(data.item.tokens, decimals) }}
                     </div>
                     <div v-else-if="type == 721 || type == 1155">
-                      <b-badge pill @click="viewNonFungible(type, settings.contract, data.item.tokenId)" v-b-popover.hover.ds500="'Click to view token'" variant="info">
+                      <b-badge v-if="data.item.tokenId" pill @click="viewNonFungible(type, settings.contract, data.item.tokenId)" v-b-popover.hover.ds500="'Click to view token'" variant="info">
                         {{ data.item.tokenId }}
                       </b-badge>
                     </div>
@@ -490,7 +492,7 @@
                       </b-link>
                     </div>
                     <div v-if="type == 721">
-                      <b-badge pill @click="viewNonFungible(type, settings.contract, data.item.tokenId)" v-b-popover.hover.ds500="'Click to view token'" variant="info">
+                      <b-badge v-if="data.item.tokenId" pill @click="viewNonFungible(type, settings.contract, data.item.tokenId)" v-b-popover.hover.ds500="'Click to view token'" variant="info">
                         {{ data.item.tokenId }}
                       </b-badge>
                     </div>
