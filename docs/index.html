@@ -162,7 +162,7 @@
                       <b-button size="sm" :disabled="!validAddress(settings.contract)" :href="explorer + 'token/' + settings.contract + '#code'" variant="link" v-b-popover.hover.ds500="'View in explorer'" target="_blank" class="m-0 ml-2 mr-2 p-0"><b-icon-link45deg shift-v="-1" font-scale="1.2"></b-icon-link45deg></b-button>
                     </div>
                     <div class="mt-0 pr-1" style="width: 20.0rem;">
-                      <b-badge pill variant="light" v-b-popover.hover.ds500="decimals != null && totalSupply && ('symbol: ' + symbol + ', name: ' + name + ', decimals: ' + decimals + ', totalSupply: ' + formatDecimals(totalSupply, decimals) + ' (' + formatDecimals(totalSupply, 0) + ')') || ''" class="mt-2 ml-2 mr-4">
+                      <b-badge pill variant="light" v-b-popover.hover.ds500="decimals != null && totalSupply && ('symbol: ' + symbol + ', name: ' + name + ', decimals: ' + decimals + ', totalSupply: ' + formatDecimals(totalSupply, decimals) + ' (' + formatDecimals(totalSupply, 0) + ')') || ''" class="mt-1 ml-2 mr-4">
                         {{ (type && ('ERC-' + type) || '') + ((symbol && (': ' + symbol)) || '') }}
                       </b-badge>
                     </div>
