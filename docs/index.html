@@ -3232,7 +3232,7 @@
                   this.modalNonFungible.logs.push({ log:now() + " Updated image to '" + this.modalNonFungible.image + "'" });
                 }
                 this.modalNonFungible.attributes = fileContent && fileContent.attributes || null;
-                this.modalNonFungible.logs.push({ log:now() + " attributes '" + this.modalNonFungible.attributes + "'" });
+                this.modalNonFungible.logs.push({ log:now() + " attributes '" + JSON.stringify(this.modalNonFungible.attributes, null, 2) + "'" });
 
               } catch (e) {
                 this.modalNonFungible.logs.push({ log:now() + " ERROR Fetched failed" });
