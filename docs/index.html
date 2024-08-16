@@ -205,6 +205,7 @@
                 </b-tab>
               </b-tabs>
 
+              <!-- Events: -->
               <div v-if="settings.tableIndex == 0">
                 <div class="d-flex flex-wrap m-0 p-0">
                   <div class="mt-0 pr-1" style="width: 11.0rem;">
@@ -342,6 +343,7 @@
                 </b-table>
               </div>
 
+              <!-- Tokens: -->
               <div v-if="settings.tableIndex == 1">
                 <div class="d-flex flex-wrap m-0 p-0">
                   <div class="mt-0 pr-1" style="width: 11.0rem;">
@@ -421,6 +423,7 @@
                 </b-table>
               </div>
 
+              <!-- Approvals: -->
               <div v-if="settings.tableIndex == 2">
                 <div class="d-flex flex-wrap m-0 p-0">
                   <div class="mt-0 pr-1" style="width: 11.0rem;">
@@ -440,7 +443,7 @@
                   <div class="mt-0 flex-grow-1">
                   </div>
                   <div class="mt-0 pl-1">
-                    <b-form-select size="sm" v-model="settings.approvalsTable.sortOption" @change="saveSettings" :options="erc20AllowancesSortOptions" v-b-popover.hover.bottom="'Yeah. Sort'"></b-form-select>
+                    <b-form-select size="sm" v-model="settings.approvalsTable.sortOption" @change="saveSettings" :options="approvalsSortOptions" v-b-popover.hover.bottom="'Yeah. Sort'"></b-form-select>
                   </div>
                   <div class="mt-0 pl-1">
                     <font size="-2" v-b-popover.hover.bottom="'# filtered / total events'">{{ formatNumber(sortedFilteredApprovals.length) + '/' + formatNumber(approvals.length) }}</font>
@@ -507,6 +510,7 @@
 
               </div>
 
+              <!-- ApprovalForAlls: -->
               <div v-if="settings.tableIndex == 3">
                 {{ pagedSortedFilteredApprovalForAlls }}
                 <!-- {{ approvalForAlls }} -->
@@ -694,7 +698,7 @@
                   <div class="mt-0 flex-grow-1">
                   </div>
                   <div class="mt-0 pl-1">
-                    <b-form-select size="sm" v-model="settings.erc20.allowancesTable.sortOption" @change="saveSettings" :options="erc20AllowancesSortOptions" v-b-popover.hover.bottom="'Yeah. Sort'"></b-form-select>
+                    <b-form-select size="sm" v-model="settings.erc20.allowancesTable.sortOption" @change="saveSettings" :options="approvalsSortOptions" v-b-popover.hover.bottom="'Yeah. Sort'"></b-form-select>
                   </div>
                   <div class="mt-0 pl-1">
                     <font size="-2" v-b-popover.hover.bottom="'# filtered / total events'">{{ formatNumber(sortedFilteredERC20Allowances.length) + '/' + formatNumber(erc20.allowances.length) }}</font>
@@ -1697,15 +1701,25 @@
             { value: 'ownerasc', text: '▲ Owner, ▲ Token Id' },
             { value: 'ownerdsc', text: '▼ Owner, ▲ Token Id' },
           ],
-          erc20AllowancesSortOptions: [
+          approvalsSortOptions: [
             { value: 'txorderasc', text: '▲ Latest Update' },
             { value: 'txorderdsc', text: '▼ Latest Update' },
             { value: 'ownerasc', text: '▲ Owner' },
             { value: 'ownerdsc', text: '▼ Owner' },
             { value: 'spenderasc', text: '▲ Spender' },
             { value: 'spenderdsc', text: '▼ Spender' },
-            { value: 'tokensasc', text: '▲ Tokens' },
-            { value: 'tokensdsc', text: '▼ Tokens' },
+            { value: 'tokensasc', text: '▲ Tokens/Token Id' },
+            { value: 'tokensdsc', text: '▼ Tokens/Token Id' },
+          ],
+          erc721ApprovalsSortOptions: [
+            { value: 'txorderasc', text: '▲ Latest Update' },
+            { value: 'txorderdsc', text: '▼ Latest Update' },
+            { value: 'ownerasc', text: '▲ Owner' },
+            { value: 'ownerdsc', text: '▼ Owner' },
+            { value: 'spenderasc', text: '▲ Spender' },
+            { value: 'spenderdsc', text: '▼ Spender' },
+            { value: 'tokensasc', text: '▲ Token Id' },
+            { value: 'tokensdsc', text: '▼ Token Id' },
           ],
           erc721And1155ApprovalForAllsSortOptions: [
             { value: 'txorderasc', text: '▲ Latest Update' },
