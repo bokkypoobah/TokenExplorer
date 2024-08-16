@@ -1918,9 +1918,7 @@
             if (reservoirPrefix) {
               this.sync.total = null;
               this.sync.completed = 0;
-              // this.sync.records = 0;
               const metadata = {};
-              metadata[this.settings.contract] = {};
               let continuation = null;
               do {
                 let url = reservoirPrefix + "tokens/v7?collection=" + this.settings.contract;
@@ -1931,25 +1929,31 @@
                 continuation = data.continuation;
                 if (data.tokens) {
                   this.sync.completed += data.tokens.length;
-                  // this.sync.records += data.tokens.length;
                   this.$forceUpdate();
                   for (let record of data.tokens) {
                     const token = parseReservoirTokenData(record);
-                    metadata[this.settings.contract][token.tokenId] = {
+                    if (!(this.settings.contract in metadata)) {
+                      metadata[this.settings.contract] = {
+                        type: parseInt(token.type.substring(3)),
+                        collectionSymbol: token.collectionSymbol,
+                        collectionName: token.collectionName,
+                        tokens: {},
+                      };
+                    }
+                    metadata[this.settings.contract].tokens[token.tokenId] = {
                       name: token.name,
-                      // description: token.description,
+                      description: token.description,
                       image: token.image,
                       attributes: token.attributes,
                     };
                   }
                 }
               } while (continuation != null && !this.sync.halt);
-              // this.sync.records = null;
               this.sync.total = null;
               this.sync.completed = null;
               this.sync.halt = false;
               Vue.set(this.metadata, this.chainId, metadata);
-              // console.log(now() + " INFO retrieveMetadata - this.metadata: " + JSON.stringify(this.metadata, null, 2));
+              console.log(now() + " INFO retrieveMetadata - this.metadata: " + JSON.stringify(this.metadata, null, 2));
               localStorage.tokenExplorerMetadata = JSON.stringify(this.metadata);
             }
           },
