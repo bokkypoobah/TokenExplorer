@@ -317,7 +317,7 @@
                     </div>
                     <div v-else-if="data.item.type == 'TransferBatch'">
                       <span v-for="(item, index) of data.item.tokenIds" v-bind:key="index">
-                        <b-badge pill @click="viewNonFungible('erc1155', settings.contract, data.item.tokenIds[index])" variant="info">
+                        <b-badge pill @click="viewNonFungible(1155, settings.contract, data.item.tokenIds[index])" variant="info">
                           {{ data.item.tokenIds[index] }}
                         </b-badge>
                         <font size="-1" class="text-muted">{{ 'x' + data.item.values[index] }}</font>
@@ -363,13 +363,13 @@
                   <div class="mt-0 flex-grow-1">
                   </div>
                   <div class="mt-0 pl-1">
-                    <div v-if="type != 'erc721' && type != 'erc1155'">
+                    <div v-if="type != 721 && type != 1155">
                       <b-form-select size="sm" v-model="settings.tokensTable.sortOptionERC20" @change="saveSettings" :options="erc20TokensSortOptions" v-b-popover.hover.bottom="'Yeah. Sort'"></b-form-select>
                     </div>
-                    <div v-if="type == 'erc721'">
+                    <div v-if="type == 721">
                       <b-form-select size="sm" v-model="settings.tokensTable.sortOptionERC721" @change="saveSettings" :options="erc721And1155TokensSortOptions" v-b-popover.hover.bottom="'Yeah. Sort'"></b-form-select>
                     </div>
-                    <div v-if="type == 'erc1155'">
+                    <div v-if="type == 1155">
                       <b-form-select size="sm" v-model="settings.tokensTable.sortOptionERC1155" @change="saveSettings" :options="erc721And1155TokensSortOptions" v-b-popover.hover.bottom="'Yeah. Sort'"></b-form-select>
                     </div>
                   </div>
@@ -526,8 +526,8 @@
                   <b-input-group-append>
                     <b-button size="sm" :disabled="!validAddress(settings.erc20.contract)" @click="retrieveERC20" variant="primary">Retrieve</b-button>
                     <b-dropdown size="sm" id="dropdown-left" text="" variant="link" v-b-popover.hover.ds500="'Some sample token contracts'" class="m-0 ml-1 p-0">
-                      <b-dropdown-item v-if="sampleContracts('erc20').length == 0" disabled>No sample contracts on this network</b-dropdown-item>
-                      <div v-for="(item, index) of sampleContracts('erc20')" v-bind:key="index">
+                      <b-dropdown-item v-if="sampleContracts(20).length == 0" disabled>No sample contracts on this network</b-dropdown-item>
+                      <div v-for="(item, index) of sampleContracts(20)" v-bind:key="index">
                         <b-dropdown-item @click="settings.erc20.contract = item.contract; saveSettings();">{{ index }}. {{ item.contract.substring(0, 8) + '...' + item.contract.slice(-6) + ' ' + item.name }}</b-dropdown-item>
                       </div>
                     </b-dropdown>
@@ -937,8 +937,8 @@
                   <b-input-group-append>
                     <b-button size="sm" :disabled="!validAddress(settings.erc721.contract)" @click="retrieveERC721" variant="primary">Retrieve</b-button>
                     <b-dropdown size="sm" id="dropdown-left" text="" variant="link" v-b-popover.hover.ds500="'Some sample token contracts'" class="m-0 ml-1 p-0">
-                      <b-dropdown-item v-if="sampleContracts('erc721').length == 0" disabled>No sample contracts on this network</b-dropdown-item>
-                      <div v-for="(item, index) of sampleContracts('erc721')" v-bind:key="index">
+                      <b-dropdown-item v-if="sampleContracts(721).length == 0" disabled>No sample contracts on this network</b-dropdown-item>
+                      <div v-for="(item, index) of sampleContracts(721)" v-bind:key="index">
                         <b-dropdown-item @click="settings.erc721.contract = item.contract; saveSettings();">{{ index }}. {{ item.contract.substring(0, 8) + '...' + item.contract.slice(-6) + ' ' + item.name }}</b-dropdown-item>
                       </div>
                     </b-dropdown>
@@ -1226,8 +1226,8 @@
                   <b-input-group-append>
                     <b-button size="sm" :disabled="!validAddress(settings.erc1155.contract)" @click="retrieveERC1155" variant="primary">Retrieve</b-button>
                     <b-dropdown size="sm" id="dropdown-left" text="" variant="link" v-b-popover.hover.ds500="'Some sample token contracts'" class="m-0 ml-1 p-0">
-                      <b-dropdown-item v-if="sampleContracts('erc1155').length == 0" disabled>No sample contracts on this network</b-dropdown-item>
-                      <div v-for="(item, index) of sampleContracts('erc1155')" v-bind:key="index">
+                      <b-dropdown-item v-if="sampleContracts(1155).length == 0" disabled>No sample contracts on this network</b-dropdown-item>
+                      <div v-for="(item, index) of sampleContracts(1155)" v-bind:key="index">
                         <b-dropdown-item @click="settings.erc1155.contract = item.contract; saveSettings();">{{ index }}. {{ item.contract.substring(0, 8) + '...' + item.contract.slice(-6) + ' ' + item.name }}</b-dropdown-item>
                       </div>
                     </b-dropdown>
