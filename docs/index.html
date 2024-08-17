@@ -2005,6 +2005,80 @@
               for (const event of records) {
                 // console.log(now() + " INFO loadERC1155 - event: " + JSON.stringify(event));
                 events.push(event);
+                if (event.type == "TransferSingle") {
+                  if (!(event.tokenId in tokensCollator)) {
+                    tokensCollator[event.tokenId] = {};
+                  }
+                  if (!(event.from in tokensCollator[event.tokenId])) {
+                    tokensCollator[event.tokenId][event.from] = {
+                      blockNumber: event.blockNumber,
+                      txIndex: event.txIndex,
+                      txHash: event.txHash,
+                      logIndex: event.logIndex,
+                      value: event.from == ADDRESS0 ? "0" : ethers.BigNumber.from(0).sub(event.value).toString(),
+                    };
+                  } else {
+                    tokensCollator[event.tokenId][event.from].blockNumber = event.blockNumber;
+                    tokensCollator[event.tokenId][event.from].txIndex = event.txIndex;
+                    tokensCollator[event.tokenId][event.from].txHash = event.txHash;
+                    tokensCollator[event.tokenId][event.from].logIndex = event.logIndex;
+                    if (event.from != ADDRESS0) {
+                      tokensCollator[event.tokenId][event.from].value = ethers.BigNumber.from(tokensCollator[event.tokenId][event.from].value).add(event.value).toString();
+                    }
+                  }
+                  if (!(event.to in tokensCollator[event.tokenId])) {
+                    tokensCollator[event.tokenId][event.to] = {
+                      blockNumber: event.blockNumber,
+                      txIndex: event.txIndex,
+                      txHash: event.txHash,
+                      logIndex: event.logIndex,
+                      value: event.value,
+                    };
+                  } else {
+                    tokensCollator[event.tokenId][event.to].blockNumber = event.blockNumber;
+                    tokensCollator[event.tokenId][event.to].txIndex = event.txIndex;
+                    tokensCollator[event.tokenId][event.to].txHash = event.txHash;
+                    tokensCollator[event.tokenId][event.to].logIndex = event.logIndex;
+                    tokensCollator[event.tokenId][event.to].value = ethers.BigNumber.from(tokensCollator[event.tokenId][event.to].value).add(event.value).toString();
+                  }
+                } else if (event.type == "TransferBatch") {
+                  for (let i = 0; i < event.tokenIds.length; i++) {
+                    if (!(event.tokenIds[i] in tokensCollator)) {
+                      tokensCollator[event.tokenIds[i]] = {};
+                    }
+                    if (!(event.from in tokensCollator[event.tokenIds[i]])) {
+                      tokensCollator[event.tokenIds[i]][event.from] = {
+                        blockNumber: event.blockNumber,
+                        txIndex: event.txIndex,
+                        txHash: event.txHash,
+                        logIndex: event.logIndex,
+                        value: event.from == ADDRESS0 ? "0" : ethers.BigNumber.from(0).sub(event.values[i]).toString(),
+                      };
+                    } else {
+                      tokensCollator[event.tokenIds[i]][event.from].blockNumber = event.blockNumber;
+                      tokensCollator[event.tokenIds[i]][event.from].txIndex = event.txIndex;
+                      tokensCollator[event.tokenIds[i]][event.from].txHash = event.txHash;
+                      tokensCollator[event.tokenIds[i]][event.from].logIndex = event.logIndex;
+                      if (event.from != ADDRESS0) {
+                        tokensCollator[event.tokenIds[i]][event.from].value = ethers.BigNumber.from(tokensCollator[event.tokenIds[i]][event.from].value).add(event.values[i]).toString();
+                      }
+                    }
+
+                  }
+                } else if (event.type == "ApprovalForAll") {
+                  if (!(event.owner in approvalForAllsCollator)) {
+                    approvalForAllsCollator[event.owner] = {};
+                  }
+                  approvalForAllsCollator[event.owner][event.operator] = {
+                    blockNumber: event.blockNumber,
+                    txIndex: event.txIndex,
+                    txHash: event.txHash,
+                    logIndex: event.logIndex,
+                    approved: event.approved,
+                  };
+                } else {
+                  console.log(now() + " INFO loadERC1155 - ELSE event: " + JSON.stringify(event));
+                }
               }
               Vue.set(this, 'events', events);
               rows = parseInt(rows) + records.length;
@@ -2012,6 +2086,23 @@
             } while (!done);
             Vue.set(this, 'events', events);
             console.log(now() + " INFO loadERC1155 - events[0..2]: " + JSON.stringify(events.slice(0, 3), null, 2));
+            console.log(now() + " INFO collateERC1155 - tokensCollator: " + JSON.stringify(tokensCollator, null, 2));
+            console.log(now() + " INFO collateERC1155 - approvalForAllsCollator: " + JSON.stringify(approvalForAllsCollator, null, 2));
+            const tokens = [];
+            for (const [ tokenId, tokenData ] of Object.entries(tokensCollator)) {
+              for (const [ owner, ownerData ] of Object.entries(tokenData)) {
+                tokens.push({ tokenId, owner, ...ownerData });
+              }
+            }
+            Vue.set(this, 'tokens', tokens);
+            const approvalForAlls = [];
+            for (const [ owner, ownerData ] of Object.entries(approvalForAllsCollator)) {
+              for (const [ operator, operatorData ] of Object.entries(ownerData)) {
+                approvalForAlls.push({ owner, operator, ...operatorData });
+              }
+            }
+            Vue.set(this, 'approvalForAlls', approvalForAlls);
+            Vue.set(this, 'approvals', []);
           },
 
           async collateERC20() {
