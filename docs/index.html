@@ -102,6 +102,8 @@
             </b-modal>
 
             <!-- HOME: -->
+            <!-- {{ EVENTTYPE }} -->
+            <!-- {{ EVENTNAME }} -->
             <b-card v-if="settings.tabIndex == 0" header="Home" no-body class="m-0 p-0">
               <b-card-body class="mt-1 p-1">
                 <h5>Welcome</h5>
@@ -337,37 +339,37 @@
                     </font>
                   </template>
                   <template #cell(type)="data">
-                    <font size="-1">{{ data.item.type }}</font>
+                    <font size="-1">{{ EVENTNAME[data.item.type] }}</font>
                   </template>
                   <template #cell(fromOwner)="data">
-                    <div v-if="data.item.type == 'Transfer' || data.item.type == 'TransferSingle' || data.item.type == 'TransferBatch'">
+                    <div v-if="data.item.type == EVENT_TRANSFER || data.item.type == EVENT_TRANSFERSINGLE || data.item.type == EVENT_TRANSFERBATCH">
                       <b-link size="sm" :href="explorer + 'address/' + data.item.from" variant="link" v-b-popover.hover.ds500="'Transfer from ' + data.item.from" target="_blank">
                         {{ data.item.from.substring(0, 8) + '...' + data.item.from.slice(-6) }}
                       </b-link>
                     </div>
-                    <div v-else-if="data.item.type == 'Approval'">
+                    <div v-else-if="data.item.type == EVENT_APPROVAL">
                       <b-link size="sm" :href="explorer + 'address/' + data.item.owner" variant="link" v-b-popover.hover.ds500="'Approval owner ' + data.item.owner" target="_blank">
                         {{ data.item.owner.substring(0, 8) + '...' + data.item.owner.slice(-6) }}
                       </b-link>
                     </div>
-                    <div v-else-if="data.item.type == 'ApprovalForAll'">
+                    <div v-else-if="data.item.type == EVENT_APPROVALFORALL">
                       <b-link size="sm" :href="explorer + 'address/' + data.item.owner" variant="link" v-b-popover.hover.ds500="'Approval owner ' + data.item.owner" target="_blank">
                         {{ data.item.owner.substring(0, 8) + '...' + data.item.owner.slice(-6) }}
                       </b-link>
                     </div>
                   </template>
                   <template #cell(toSpenderOperator)="data">
-                    <div v-if="data.item.type == 'Transfer' || data.item.type == 'TransferSingle' || data.item.type == 'TransferBatch'">
+                    <div v-if="data.item.type == EVENT_TRANSFER || data.item.type == EVENT_TRANSFERSINGLE || data.item.type == EVENT_TRANSFERBATCH">
                       <b-link size="sm" :href="explorer + 'address/' + data.item.to" variant="link" v-b-popover.hover.ds500="'Transfer to ' + data.item.to" target="_blank">
                         {{ data.item.to.substring(0, 8) + '...' + data.item.to.slice(-6) }}
                       </b-link>
                     </div>
-                    <div v-else-if="data.item.type == 'Approval'">
+                    <div v-else-if="data.item.type == EVENT_APPROVAL">
                       <b-link size="sm" :href="explorer + 'address/' + data.item.spender" variant="link" v-b-popover.hover.ds500="'Approval spender ' + data.item.spender" target="_blank">
                         {{ data.item.spender.substring(0, 8) + '...' + data.item.spender.slice(-6) }}
                       </b-link>
                     </div>
-                    <div v-else-if="data.item.type == 'ApprovalForAll'">
+                    <div v-else-if="data.item.type == EVENT_APPROVALFORALL">
                       <b-link size="sm" :href="explorer + 'address/' + data.item.operator" variant="link" v-b-popover.hover.ds500="'ApprovalForAll operator ' + data.item.operator" target="_blank">
                         {{ data.item.operator.substring(0, 8) + '...' + data.item.operator.slice(-6) }}
                       </b-link>
@@ -377,7 +379,7 @@
                     {{ contract.type == 721 ? "Token Id" : ( contract.type == 1155 ? "Token Id(s)" : "Tokens") }}
                   </template>
                   <template #cell(tokensTokenId)="data">
-                    <div v-if="data.item.type == 'Transfer'">
+                    <div v-if="data.item.type == EVENT_TRANSFER">
                       <div v-if="data.item.contractType == 20">
                         <font size="-2" class="text-muted">
                           {{ formatNumber(data.item.tokens) }}
@@ -390,12 +392,12 @@
                         </b-badge>
                       </div>
                     </div>
-                    <div v-else-if="data.item.type == 'TransferSingle'">
+                    <div v-else-if="data.item.type == EVENT_TRANSFERSINGLE">
                       <b-badge v-if="data.item.tokenId" pill @click="viewNonFungible(type, settings.contract, data.item.tokenId)" v-b-popover.hover.ds500="'Click to view token'" variant="info">
                         {{ data.item.tokenId }}
                       </b-badge>
                     </div>
-                    <div v-else-if="data.item.type == 'TransferBatch'">
+                    <div v-else-if="data.item.type == EVENT_TRANSFERBATCH">
                       <span v-for="(item, index) of data.item.tokenIds" v-bind:key="index">
                         <b-badge pill @click="viewNonFungible(1155, settings.contract, data.item.tokenIds[index])" variant="info">
                           {{ data.item.tokenIds[index] }}
@@ -403,7 +405,7 @@
                         <font size="-1" class="text-muted">{{ 'x' + data.item.values[index] }}</font>
                       </span>
                     </div>
-                    <div v-else-if="data.item.type == 'Approval'">
+                    <div v-else-if="data.item.type == EVENT_APPROVAL">
                       <div v-if="data.item.contractType == 20">
                         <font size="-2" class="text-muted">
                           {{ formatNumber(data.item.tokens) }}
@@ -416,7 +418,7 @@
                         </b-badge>
                       </div>
                     </div>
-                    <div v-else-if="data.item.type == 'ApprovalForAll'">
+                    <div v-else-if="data.item.type == EVENT_APPROVALFORALL">
                       {{ data.item.approved }}
                     </div>
                   </template>
@@ -809,6 +811,12 @@
         el: '#app',
         // --- DATA ---
         data: {
+          EVENT_TRANSFER: 0,
+          EVENT_TRANSFERSINGLE: 1,
+          EVENT_TRANSFERBATCH: 2,
+          EVENT_APPROVAL: 3,
+          EVENT_APPROVALFORALL: 4,
+
           DB_PROCESSING_BATCH_SIZE: 10000,
 
           connected: false,
@@ -1024,6 +1032,12 @@
 
         // --- COMPUTED ---
         computed: {
+          // EVENTTYPE() {
+          //   return EVENTTYPE;
+          // },
+          EVENTNAME() {
+            return EVENTNAME;
+          },
           network() {
             return NETWORKS[this.chainId] || {};
           },
@@ -1083,7 +1097,7 @@
             for (const item of this.events) {
               const metadata = tokensMetadata[item.tokenId] || null;
               let metadatas = null;
-              if (item.type == "TransferBatch") {
+              if (item.type == EVENT_TRANSFERBATCH) {
                 metadatas = [];
                 for (const [index, tokenId] of item.tokenIds.entries()) {
                   metadatas.push({
@@ -1097,34 +1111,34 @@
               }
               let include = true;
               if (addressRegex) {
-                if (item.type == "Transfer") {
+                if (item.type == EVENT_TRANSFER) {
                   if (!(addressRegex.test(item.from) || addressRegex.test(item.to) || addressRegex.test(item.txHash) || addressRegex.test(item.blockNumber.toString()))) {
                     include = false;
                   }
-                } else if (item.type == "TransferSingle") {
+                } else if (item.type == EVENT_TRANSFERSINGLE) {
                   if (!(addressRegex.test(item.from) || addressRegex.test(item.to) || addressRegex.test(item.txHash) || addressRegex.test(item.blockNumber.toString()) || addressRegex.test(item.tokenId.toString()))) {
                     include = false;
                   }
-                } else if (item.type == "TransferBatch") {
+                } else if (item.type == EVENT_TRANSFERBATCH) {
                   if (!(addressRegex.test(item.from) || addressRegex.test(item.to) || addressRegex.test(item.txHash) || addressRegex.test(item.blockNumber.toString()))) {
                     include = false;
                   }
-                } else if (item.type == "Approval") {
+                } else if (item.type == EVENT_APPROVAL) {
                   if (!(addressRegex.test(item.owner) || addressRegex.test(item.spender) || addressRegex.test(item.txHash) || addressRegex.test(item.blockNumber))) {
                     include = false;
                   }
-                } else if (item.type == "ApprovalForAll") {
+                } else if (item.type == EVENT_APPROVALFORALL) {
                   if (!(addressRegex.test(item.owner) || addressRegex.test(item.operator) || addressRegex.test(item.txHash) || addressRegex.test(item.blockNumber))) {
                     include = false;
                   }
                 }
               }
               if (include && tokenIdRegex && (this.type == 721 || this.type == 1155)) {
-                if (this.type == 721 || (this.type == 1155 && item.type == "TransferSingle")) {
+                if (this.type == 721 || (this.type == 1155 && item.type == EVENT_TRANSFERSINGLE)) {
                   if (!(tokenIdRegex.test(item.tokenId))) {
                     include = false;
                   }
-                } else if (this.type == 1155 && item.type == "TransferBatch") {
+                } else if (this.type == 1155 && item.type == EVENT_TRANSFERBATCH) {
                   let found = false;
                   for (const [index, tokenId] of item.tokenIds.entries()) {
                     // console.log(index + " " + tokenId);
@@ -1844,7 +1858,7 @@
               for (const event of records) {
                 // console.log(now() + " INFO loadERC20 - event: " + JSON.stringify(event));
                 events.push(event);
-                if (event.type == "Transfer") {
+                if (event.type == EVENT_TRANSFER) {
                   if (!(event.from in tokensCollator)) {
                     tokensCollator[event.from] = {
                       blockNumber: event.blockNumber,
@@ -1878,7 +1892,7 @@
                     tokensCollator[event.to].logIndex = event.logIndex;
                     tokensCollator[event.to].tokens = ethers.BigNumber.from(tokensCollator[event.to].tokens).add(event.tokens).toString();
                   }
-                } else if (event.type == "Approval") {
+                } else if (event.type == EVENT_APPROVAL) {
                   if (!(event.owner in approvalsCollator)) {
                     approvalsCollator[event.owner] = {};
                   }
@@ -1930,7 +1944,7 @@
               for (const event of records) {
                 // console.log(now() + " INFO loadERC721 - event: " + JSON.stringify(event));
                 events.push(event);
-                if (event.type == "Transfer") {
+                if (event.type == EVENT_TRANSFER) {
                   tokensCollator[event.tokenId] = {
                     blockNumber: event.blockNumber,
                     txIndex: event.txIndex,
@@ -1938,7 +1952,7 @@
                     logIndex: event.logIndex,
                     owner: event.to,
                   };
-                } else if (event.type == "Approval") {
+                } else if (event.type == EVENT_APPROVAL) {
                   approvalsCollator[event.tokenId] = {
                     blockNumber: event.blockNumber,
                     txIndex: event.txIndex,
@@ -1947,7 +1961,7 @@
                     owner: event.owner,
                     spender: event.spender,
                   };
-                } else if (event.type == "ApprovalForAll") {
+                } else if (event.type == EVENT_APPROVALFORALL) {
                   if (!(event.owner in approvalForAllsCollator)) {
                     approvalForAllsCollator[event.owner] = {};
                   }
@@ -2005,7 +2019,7 @@
               for (const event of records) {
                 // console.log(now() + " INFO loadERC1155 - event: " + JSON.stringify(event));
                 events.push(event);
-                if (event.type == "TransferSingle") {
+                if (event.type == EVENT_TRANSFERSINGLE) {
                   if (!(event.tokenId in tokensCollator)) {
                     tokensCollator[event.tokenId] = {};
                   }
@@ -2041,7 +2055,7 @@
                     tokensCollator[event.tokenId][event.to].logIndex = event.logIndex;
                     tokensCollator[event.tokenId][event.to].value = ethers.BigNumber.from(tokensCollator[event.tokenId][event.to].value).add(event.value).toString();
                   }
-                } else if (event.type == "TransferBatch") {
+                } else if (event.type == EVENT_TRANSFERBATCH) {
                   for (let i = 0; i < event.tokenIds.length; i++) {
                     if (!(event.tokenIds[i] in tokensCollator)) {
                       tokensCollator[event.tokenIds[i]] = {};
@@ -2065,7 +2079,7 @@
                     }
 
                   }
-                } else if (event.type == "ApprovalForAll") {
+                } else if (event.type == EVENT_APPROVALFORALL) {
                   if (!(event.owner in approvalForAllsCollator)) {
                     approvalForAllsCollator[event.owner] = {};
                   }
@@ -2110,7 +2124,7 @@
             const tokensCollator = {};
             const approvalsCollator = {};
             for (const event of this.events) {
-              if (event.type == "Transfer") {
+              if (event.type == EVENT_TRANSFER) {
                 if (!(event.from in tokensCollator)) {
                   tokensCollator[event.from] = {
                     blockNumber: event.blockNumber,
@@ -2144,7 +2158,7 @@
                   tokensCollator[event.to].logIndex = event.logIndex;
                   tokensCollator[event.to].tokens = ethers.BigNumber.from(tokensCollator[event.to].tokens).add(event.tokens).toString();
                 }
-              } else if (event.type == "Approval") {
+              } else if (event.type == EVENT_APPROVAL) {
                 if (!(event.owner in approvalsCollator)) {
                   approvalsCollator[event.owner] = {};
                 }
@@ -2179,7 +2193,7 @@
             const approvalForAllsCollator = {};
             const approvalsCollator = {};
             for (const event of this.events) {
-              if (event.type == "Transfer") {
+              if (event.type == EVENT_TRANSFER) {
                 tokensCollator[event.tokenId] = {
                   blockNumber: event.blockNumber,
                   txIndex: event.txIndex,
@@ -2187,7 +2201,7 @@
                   logIndex: event.logIndex,
                   owner: event.to,
                 };
-              } else if (event.type == "Approval") {
+              } else if (event.type == EVENT_APPROVAL) {
                 approvalsCollator[event.tokenId] = {
                   blockNumber: event.blockNumber,
                   txIndex: event.txIndex,
@@ -2196,7 +2210,7 @@
                   owner: event.owner,
                   spender: event.spender,
                 };
-              } else if (event.type == "ApprovalForAll") {
+              } else if (event.type == EVENT_APPROVALFORALL) {
                 if (!(event.owner in approvalForAllsCollator)) {
                   approvalForAllsCollator[event.owner] = {};
                 }
@@ -2237,7 +2251,7 @@
             const tokensCollator = {};
             const approvalForAllsCollator = {};
             for (const event of this.events) {
-              if (event.type == "TransferSingle") {
+              if (event.type == EVENT_TRANSFERSINGLE) {
                 if (!(event.tokenId in tokensCollator)) {
                   tokensCollator[event.tokenId] = {};
                 }
@@ -2273,7 +2287,7 @@
                   tokensCollator[event.tokenId][event.to].logIndex = event.logIndex;
                   tokensCollator[event.tokenId][event.to].value = ethers.BigNumber.from(tokensCollator[event.tokenId][event.to].value).add(event.value).toString();
                 }
-              } else if (event.type == "TransferBatch") {
+              } else if (event.type == EVENT_TRANSFERBATCH) {
                 for (let i = 0; i < event.tokenIds.length; i++) {
                   if (!(event.tokenIds[i] in tokensCollator)) {
                     tokensCollator[event.tokenIds[i]] = {};
@@ -2297,7 +2311,7 @@
                   }
 
                 }
-              } else if (event.type == "ApprovalForAll") {
+              } else if (event.type == EVENT_APPROVALFORALL) {
                 if (!(event.owner in approvalForAllsCollator)) {
                   approvalForAllsCollator[event.owner] = {};
                 }
