@@ -1620,10 +1620,11 @@
             const db = new Dexie(this.db.name);
             db.version(this.db.version).stores(this.db.schemaDefinition);
             const provider = new ethers.providers.Web3Provider(window.ethereum);
-            const erc20 = new ethers.Contract(this.settings.contract, ERC20ABI, provider);
-            const erc165 = new ethers.Contract(this.settings.contract, ERC165ABI, provider);
-            const erc721 = new ethers.Contract(this.settings.contract, ERC721ABI, provider);
-            const erc1155 = new ethers.Contract(this.settings.contract, ERC1155ABI, provider);
+            const contract = ethers.utils.getAddress(this.settings.contract);
+            const erc20 = new ethers.Contract(contract, ERC20ABI, provider);
+            const erc165 = new ethers.Contract(contract, ERC165ABI, provider);
+            const erc721 = new ethers.Contract(contract, ERC721ABI, provider);
+            const erc1155 = new ethers.Contract(contract, ERC1155ABI, provider);
             const block = await provider.getBlock("latest");
             const latestBlockNumber = parseInt(block.number);
             const timestamp = parseInt(block.timestamp);
@@ -1682,7 +1683,7 @@
             // console.log(now() + " retrieveEvents - this.description: " + this.description);
             const record = {
               chainId: this.chainId,
-              contract: this.settings.contract,
+              contract,
               type: this.type,
               symbol: this.symbol,
               name: this.name,
@@ -1788,18 +1789,77 @@
             console.log(now() + " INFO loadData BEGIN - contract: " + contract);
             const db = new Dexie(this.db.name);
             db.version(this.db.version).stores(this.db.schemaDefinition);
-            const data = await db.contracts.where("contract").equals(contract).toArray();
+            const data = await db.contracts.where("contract").equals(ethers.utils.getAddress(contract)).toArray();
             let contractData = null;
             if (data.length == 1) {
               contractData = data[0];
               console.log(now() + " INFO loadData - contractData: " + JSON.stringify(contractData, null, 2));
             }
+            // let rows = 0;
+            // let done = false;
+            // do {
+            //   const data = await db.events.where("contract").equals(contract).offset(rows).limit(this.DB_PROCESSING_BATCH_SIZE).toArray();
+            //   console.log(now() + " INFO loadData - data.length: " + data.length + ", first[0..9]: " + JSON.stringify(data.slice(0, 10).map(e => e.blockNumber + '.' + e.logIndex )));
+            //   rows = parseInt(rows) + data.length;
+            //   done = data.length < this.DB_PROCESSING_BATCH_SIZE;
+            // } while (!done);
+            if (contractData) {
+              if (contractData.type == 20) {
+                this.loadERC20(contractData);
+              } else if (contractData.type == 721) {
+                this.loadERC721(contractData);
+              } else if (contractData.type == 1155) {
+                this.loadERC1155(contractData);
+              }
+            }
+          },
+
+          async loadERC20(contractData) {
+            console.log(now() + " INFO loadERC20 BEGIN - contractData.contract: " + contractData.contract);
+            const db = new Dexie(this.db.name);
+            db.version(this.db.version).stores(this.db.schemaDefinition);
             let rows = 0;
             let done = false;
             do {
-              const data = await db.events.where("contract").equals(contract).offset(rows).limit(this.DB_PROCESSING_BATCH_SIZE).toArray();
-              console.log(now() + " INFO loadData - data.length: " + data.length + ", first[0..9]: " + JSON.stringify(data.slice(0, 10).map(e => e.blockNumber + '.' + e.logIndex )));
-              // console.log(now() + " INFO loadData - data: " + JSON.stringify(data, null, 2));
+              const data = await db.events.where("contract").equals(contractData.contract).offset(rows).limit(this.DB_PROCESSING_BATCH_SIZE).toArray();
+              console.log(now() + " INFO loadERC20 - data.length: " + data.length + ", first[0..9]: " + JSON.stringify(data.slice(0, 10).map(e => e.blockNumber + '.' + e.logIndex )));
+              for (const item of data) {
+                console.log(now() + " INFO loadERC20 - item: " + JSON.stringify(item));
+              }
+              rows = parseInt(rows) + data.length;
+              done = data.length < this.DB_PROCESSING_BATCH_SIZE;
+            } while (!done);
+          },
+
+          async loadERC721(contract) {
+            console.log(now() + " INFO loadERC721 BEGIN - contractData.contract: " + contractData.contract);
+            const db = new Dexie(this.db.name);
+            db.version(this.db.version).stores(this.db.schemaDefinition);
+            let rows = 0;
+            let done = false;
+            do {
+              const data = await db.events.where("contract").equals(contractData.contract).offset(rows).limit(this.DB_PROCESSING_BATCH_SIZE).toArray();
+              console.log(now() + " INFO loadERC721 - data.length: " + data.length + ", first[0..9]: " + JSON.stringify(data.slice(0, 10).map(e => e.blockNumber + '.' + e.logIndex )));
+              for (const item of data) {
+                console.log(now() + " INFO loadERC721 - item: " + JSON.stringify(item));
+              }
+              rows = parseInt(rows) + data.length;
+              done = data.length < this.DB_PROCESSING_BATCH_SIZE;
+            } while (!done);
+          },
+
+          async loadERC1155(contract) {
+            console.log(now() + " INFO loadERC1155 BEGIN - contractData.contract: " + contractData.contract);
+            const db = new Dexie(this.db.name);
+            db.version(this.db.version).stores(this.db.schemaDefinition);
+            let rows = 0;
+            let done = false;
+            do {
+              const data = await db.events.where("contract").equals(contractData.contract).offset(rows).limit(this.DB_PROCESSING_BATCH_SIZE).toArray();
+              console.log(now() + " INFO loadERC1155 - data.length: " + data.length + ", first[0..9]: " + JSON.stringify(data.slice(0, 10).map(e => e.blockNumber + '.' + e.logIndex )));
+              for (const item of data) {
+                console.log(now() + " INFO loadERC1155 - item: " + JSON.stringify(item));
+              }
               rows = parseInt(rows) + data.length;
               done = data.length < this.DB_PROCESSING_BATCH_SIZE;
             } while (!done);
