@@ -822,6 +822,7 @@
           EVENT_APPROVAL: 3,
           EVENT_APPROVALFORALL: 4,
 
+          EVENT_CONFIRMATIONS: 1234567,
           DB_PROCESSING_BATCH_SIZE: 10000,
 
           connected: false,
@@ -1775,12 +1776,13 @@
                 await getLogs(parseInt(mid) + 1, toBlock);
               }
             }
-            const startBlock = 0;
-            // const startBlock = latestBlockNumber - 10000;
-
-            // const deleteCall = await db.events.where("confirmations").below(parameter.confirmations).delete();
-            // const latest = await db.events.where('[chainId+blockNumber+logIndex]').between([parameter.chainId, Dexie.minKey, Dexie.minKey],[parameter.chainId, Dexie.maxKey, Dexie.maxKey]).last();
-            // const startBlock = (parameter.incrementalSync && latest) ? parseInt(latest.blockNumber) + 1: 0;
+            // const startBlock = 0;
+            const deleted = await db.events.where('[contract+confirmations]').between([this.contract.contract, Dexie.minKey], [this.contract.contract, this.EVENT_CONFIRMATIONS]).delete();
+            console.log(now() + " retrieveEvents - Low confirmation events deleted: " + deleted);
+            const latest = await db.events.where('contract').equals(this.contract.contract).last();
+            console.log(now() + " retrieveEvents - latest: " + JSON.stringify(latest, null, 2));
+            const startBlock = latest ? parseInt(latest.blockNumber) + 1: 0;
+            console.log(now() + " retrieveEvents - startBlock: " + startBlock);
 
             this.sync.total = latestBlockNumber;
             this.sync.records = 0;
@@ -1797,27 +1799,6 @@
             }).catch(function(e) {
               console.log(now() + " ERROR retrieveMetadata - put: " + e.message);
             });
-
-            // console.log(now() + " INFO retrieveEvents END - events: " + JSON.stringify(events, null, 2));
-            // if (this.type == 20) {
-            //   this.collateERC20();
-            // } else if (this.type == 721) {
-            //   this.collateERC721();
-            // } else if (this.type == 1155) {
-            //   this.collateERC1155();
-            // }
-            // this.type, this.symbol, this.name, this.decimals, this.totalSupply
-            // localStorage.tokenExplorerData = JSON.stringify({
-            //   version: 0,
-            //   type: this.type,
-            //   symbol: this.symbol,
-            //   name: this.name,
-            //   decimals: this.decimals,
-            //   events: this.events,
-            //   tokens: this.tokens,
-            //   approvals: this.approvals,
-            //   approvalForAlls: this.approvalForAlls,
-            // });
             await this.loadData(contractAddress);
           },
 
