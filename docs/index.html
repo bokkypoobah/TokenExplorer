@@ -145,14 +145,14 @@
                   <div class="d-flex flex-wrap m-0 p-0">
                     <div class="mt-0 pr-0" style="width: 25.0rem;">
                       <b-form-group :state="!settings.contract || validAddress(settings.contract)" :invalid-feedback="'Invalid address'" class="m-0 p-0">
-                        <b-form-input type="text" size="sm" id="explorer-contract" v-model="settings.contract" @change="saveSettings" placeholder="Enter token contract address, or select from dropdown"></b-form-input>
+                        <b-form-input type="text" size="sm" id="explorer-contract" v-model="settings.contract" @change="saveSettings(); loadData(settings.contract);" placeholder="Enter token contract address, or select from dropdown"></b-form-input>
                       </b-form-group>
                     </div>
                     <div class="mt-0 pr-0">
                       <b-dropdown size="sm" id="dropdown-left" text="" variant="link" v-b-popover.hover.ds500="'Some sample token contracts'" class="m-0 ml-1 p-0">
                         <b-dropdown-item v-if="sampleContracts('all').length == 0" disabled>No sample contracts on this network</b-dropdown-item>
                         <div v-for="(item, index) of sampleContracts('all')" v-bind:key="index">
-                          <b-dropdown-item @click="settings.contract = item.contract; saveSettings();">{{ index }}. {{ 'ERC-' + item.type }} {{ item.contract.substring(0, 8) + '...' + item.contract.slice(-6) + ' ' + item.name }}</b-dropdown-item>
+                          <b-dropdown-item @click="settings.contract = item.contract; saveSettings(); loadData(settings.contract);">{{ index }}. {{ 'ERC-' + item.type }} {{ item.contract.substring(0, 8) + '...' + item.contract.slice(-6) + ' ' + item.name }}</b-dropdown-item>
                         </div>
                       </b-dropdown>
                     </div>
