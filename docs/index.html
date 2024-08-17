@@ -167,20 +167,20 @@
                     </div> -->
                     <div class="mt-0 pr-1" style="width: 23.0rem;">
                       <font size="-1">
-                        <b-badge variant="light" v-b-popover.hover.ds500="decimals != null && totalSupply && ('symbol: ' + symbol + ', name: ' + name + ', decimals: ' + decimals + ', totalSupply: ' + formatDecimals(totalSupply, decimals) + ' (' + formatNumber(totalSupply) + ')') || ''" class="m-0 mt-1 ml-2 mr-1">
-                          {{ (type && ('ERC-' + type) || 'Enter token contract address and click [Retrieve]') }}
+                        <b-badge variant="light" v-b-popover.hover.ds500="contract.decimals != null && contract.totalSupply && ('symbol: ' + contract.symbol + ', name: ' + contract.name + ', decimals: ' + contract.decimals + ', totalSupply: ' + formatDecimals(contract.totalSupply, contract.decimals) + ' (' + formatNumber(contract.totalSupply) + ')') || ''" class="m-0 mt-1 ml-2 mr-1">
+                          {{ (contract.type && ('ERC-' + contract.type) || 'Enter token contract address and click [Retrieve]') }}
                         </b-badge>
-                        <b-badge v-if="symbol" variant="light" v-b-popover.hover.ds500="'symbol'" class="m-0 mt-1">
-                          {{ symbol }}
+                        <b-badge v-if="contract.symbol" variant="light" v-b-popover.hover.ds500="'symbol'" class="m-0 mt-1">
+                          {{ contract.symbol }}
                         </b-badge>
-                        <b-badge v-if="name" variant="light" v-b-popover.hover.ds500="'name'" class="m-0 mt-1">
-                          {{ name }}
+                        <b-badge v-if="contract.name" variant="light" v-b-popover.hover.ds500="'name'" class="m-0 mt-1">
+                          {{ contract.name }}
                         </b-badge>
-                        <b-badge v-if="decimals" variant="light" v-b-popover.hover.ds500="'decimals'" class="m-0 mt-1">
-                          {{ decimals }}
+                        <b-badge v-if="contract.decimals" variant="light" v-b-popover.hover.ds500="'decimals'" class="m-0 mt-1">
+                          {{ contract.decimals }}
                         </b-badge>
-                        <b-badge v-if="totalSupply" variant="light" v-b-popover.hover.ds500="'totalSupply ' + (totalSupply && formatNumber(totalSupply) || '')" class="m-0 mt-1">
-                          {{ formatDecimals(totalSupply, decimals) }}
+                        <b-badge v-if="contract.totalSupply" variant="light" v-b-popover.hover.ds500="'totalSupply ' + (totalSupply && formatNumber(totalSupply) || '')" class="m-0 mt-1">
+                          {{ formatDecimals(contract.totalSupply, contract.decimals) }}
                         </b-badge>
                       </font>
                     </div>
@@ -210,7 +210,7 @@
 
               <div class="d-flex flex-wrap m-0 p-0">
                 <div class="mt-0 pr-1" style="width: 10.0rem;">
-                  <b-form-input :disabled="type != 721 && type != 1155" type="text" size="sm" v-model.trim="settings.filter.tokenId" @change="saveSettings" debounce="600" v-b-popover.hover.ds500="'Regex search'" placeholder="🔍 tokenid"></b-form-input>
+                  <b-form-input :disabled="contract.type != 721 && contract.type != 1155" type="text" size="sm" v-model.trim="settings.filter.tokenId" @change="saveSettings" debounce="600" v-b-popover.hover.ds500="'Regex search'" placeholder="🔍 tokenid"></b-form-input>
                 </div>
                 <div class="mt-0 pr-1" style="width: 10.0rem;">
                   <b-form-input type="text" size="sm" v-model.trim="settings.filter.address" @change="saveSettings" debounce="600" v-b-popover.hover.ds500="'Regex search'" placeholder="🔍 address"></b-form-input>
@@ -255,13 +255,13 @@
                     <b-form-select size="sm" v-model="settings.eventsTable.sortOption" @change="saveSettings" :options="eventsSortOptions" v-b-popover.hover.bottom="'Yeah. Sort'"></b-form-select>
                   </div>
                   <div v-else-if="settings.tableIndex == 1">
-                    <div v-if="type != 721 && type != 1155">
+                    <div v-if="contract.type != 721 && contract.type != 1155">
                       <b-form-select size="sm" v-model="settings.tokensTable.sortOptionERC20" @change="saveSettings" :options="erc20TokensSortOptions" v-b-popover.hover.bottom="'Yeah. Sort'"></b-form-select>
                     </div>
-                    <div v-if="type == 721">
+                    <div v-if="contract.type == 721">
                       <b-form-select size="sm" v-model="settings.tokensTable.sortOptionERC721" @change="saveSettings" :options="erc721And1155TokensSortOptions" v-b-popover.hover.bottom="'Yeah. Sort'"></b-form-select>
                     </div>
-                    <div v-if="type == 1155">
+                    <div v-if="contract.type == 1155">
                       <b-form-select size="sm" v-model="settings.tokensTable.sortOptionERC1155" @change="saveSettings" :options="erc721And1155TokensSortOptions" v-b-popover.hover.bottom="'Yeah. Sort'"></b-form-select>
                     </div>
                   </div>
@@ -374,7 +374,7 @@
                     </div>
                   </template>
                   <template #head(tokensTokenId)="data">
-                    {{ type == 721 ? "Token Id" : ( type == 1155 ? "Token Id(s)" : "Tokens") }}
+                    {{ contract.type == 721 ? "Token Id" : ( contract.type == 1155 ? "Token Id(s)" : "Tokens") }}
                   </template>
                   <template #cell(tokensTokenId)="data">
                     <div v-if="data.item.type == 'Transfer'">
@@ -425,7 +425,7 @@
 
               <!-- Tokens: -->
               <div v-if="settings.tableIndex == 1">
-                <b-table small fixed striped :fields="type == 20 ? tokensFieldsFungible : tokensFieldsNonFungible" :items="pagedSortedFilteredTokens" show-empty empty-html="Click [Retrieve] above" head-variant="light" class="mt-1">
+                <b-table small fixed striped :fields="contract.type == 20 ? tokensFieldsFungible : tokensFieldsNonFungible" :items="pagedSortedFilteredTokens" show-empty empty-html="Click [Retrieve] above" head-variant="light" class="mt-1">
                   <template #cell(number)="data">
                       <font size="-1" class="text-muted">{{ parseInt(data.index) + ((settings.tokensTable.currentPage - 1) * settings.tokensTable.pageSize) + 1 }}</font>
                   </template>
@@ -449,7 +449,7 @@
                     </b-link>
                   </template>
                   <template #head(owners)="data">
-                    {{ type == 721 ? "Owner" : "Owner(s)" }}
+                    {{ contract.type == 721 ? "Owner" : "Owner(s)" }}
                   </template>
                   <template #cell(owners)="data">
                     <b-link size="sm" :href="explorer + 'token/' + settings.contract + '?a=' + data.item.owner" variant="link" v-b-popover.hover.ds500="data.item.owner" target="_blank">
@@ -457,14 +457,14 @@
                     </b-link>
                   </template>
                   <template #cell(tokens)="data">
-                    <div v-if="type == 20">
+                    <div v-if="contract.type == 20">
                       <font size="-2" class="text-muted">
                         {{ formatNumber(data.item.tokens) }}
                       </font>
                       {{ formatDecimals(data.item.tokens, decimals) }}
                     </div>
-                    <div v-else-if="type == 721 || type == 1155">
-                      <b-badge v-if="data.item.tokenId" pill @click="viewNonFungible(type, settings.contract, data.item.tokenId)" v-b-popover.hover.ds500="'Click to view token'" variant="info">
+                    <div v-else-if="contract.type == 721 || contract.type == 1155">
+                      <b-badge v-if="data.item.tokenId" pill @click="viewNonFungible(contract.type, contract.contract, data.item.tokenId)" v-b-popover.hover.ds500="'Click to view token'" variant="info">
                         {{ data.item.tokenId }}
                       </b-badge>
                     </div>
@@ -503,10 +503,10 @@
                     </b-link>
                   </template>
                   <template #head(tokens)="data">
-                    {{ type == 721 ? "Token Id" : "Tokens" }}
+                    {{ contract.type == 721 ? "Token Id" : "Tokens" }}
                   </template>
                   <template #cell(tokens)="data">
-                    <div v-if="type == 20">
+                    <div v-if="contract.type == 20">
                       <font size="-2" class="text-muted">
                         {{ formatNumber(data.item.tokens) }}
                       </font>
@@ -519,8 +519,8 @@
                         </span>
                       </b-link>
                     </div>
-                    <div v-if="type == 721">
-                      <b-badge v-if="data.item.tokenId" pill @click="viewNonFungible(type, settings.contract, data.item.tokenId)" v-b-popover.hover.ds500="'Click to view token'" variant="info">
+                    <div v-if="contract.type == 721">
+                      <b-badge v-if="data.item.tokenId" pill @click="viewNonFungible(contract.type, contract.contract, data.item.tokenId)" v-b-popover.hover.ds500="'Click to view token'" variant="info">
                         {{ data.item.tokenId }}
                       </b-badge>
                     </div>
