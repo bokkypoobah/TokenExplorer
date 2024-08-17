@@ -809,6 +809,8 @@
         el: '#app',
         // --- DATA ---
         data: {
+          DB_PROCESSING_BATCH_SIZE: 10000,
+
           connected: false,
           chainId: null,
           coinbase: null,
@@ -1031,7 +1033,7 @@
 
           // --- Explorer: ---
           filterRegexes() {
-            console.log(now() + " INFO filterRegexes: " + this.settings.filter.tokenId + "/" + this.settings.filter.address + "/" + this.settings.filter.blockTxHash);
+            // console.log(now() + " INFO filterRegexes: " + this.settings.filter.tokenId + "/" + this.settings.filter.address + "/" + this.settings.filter.blockTxHash);
             let tokenIdRegex = null;
             if (this.settings.filter.tokenId != null && this.settings.filter.tokenId.length > 0) {
               try {
@@ -1782,6 +1784,27 @@
             // });
           },
 
+          async loadData(contract) {
+            console.log(now() + " INFO loadData BEGIN - contract: " + contract);
+            const db = new Dexie(this.db.name);
+            db.version(this.db.version).stores(this.db.schemaDefinition);
+            const data = await db.contracts.where("contract").equals(contract).toArray();
+            let contractData = null;
+            if (data.length == 1) {
+              contractData = data[0];
+              console.log(now() + " INFO loadData - contractData: " + JSON.stringify(contractData, null, 2));
+            }
+            let rows = 0;
+            let done = false;
+            do {
+              const data = await db.events.where("contract").equals(contract).offset(rows).limit(this.DB_PROCESSING_BATCH_SIZE).toArray();
+              console.log(now() + " INFO loadData - data.length: " + data.length + ", first[0..9]: " + JSON.stringify(data.slice(0, 10).map(e => e.blockNumber + '.' + e.logIndex )));
+              // console.log(now() + " INFO loadData - data: " + JSON.stringify(data, null, 2));
+              rows = parseInt(rows) + data.length;
+              done = data.length < this.DB_PROCESSING_BATCH_SIZE;
+            } while (!done);
+          },
+
           async collateERC20() {
             console.log(now() + " INFO collateERC20");
             const tokensCollator = {};
@@ -2317,6 +2340,7 @@
               this.settings.approvalForAllsTable.currentPage = 1;
             }
           }
+          this.loadData(this.settings.contract);
         },
       })
     </script>
