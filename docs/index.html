@@ -382,7 +382,7 @@
                         <font size="-2" class="text-muted">
                           {{ formatNumber(data.item.tokens) }}
                         </font>
-                        {{ formatDecimals(data.item.tokens, decimals) }}
+                        {{ formatDecimals(data.item.tokens, contract.decimals) }}
                       </div>
                       <div v-else-if="data.item.contractType == 721">
                         <b-badge v-if="data.item.tokenId" pill @click="viewNonFungible(type, settings.contract, data.item.tokenId)" v-b-popover.hover.ds500="'Click to view token'" variant="info">
@@ -408,7 +408,7 @@
                         <font size="-2" class="text-muted">
                           {{ formatNumber(data.item.tokens) }}
                         </font>
-                        {{ formatDecimals(data.item.tokens, decimals) }}
+                        {{ formatDecimals(data.item.tokens, contract.decimals) }}
                       </div>
                       <div v-else>
                         <b-badge v-if="data.item.tokenId" pill @click="viewNonFungible(type, settings.contract, data.item.tokenId)" v-b-popover.hover.ds500="'Click to view token'" variant="info">
@@ -461,7 +461,7 @@
                       <font size="-2" class="text-muted">
                         {{ formatNumber(data.item.tokens) }}
                       </font>
-                      {{ formatDecimals(data.item.tokens, decimals) }}
+                      {{ formatDecimals(data.item.tokens, contract.decimals) }}
                     </div>
                     <div v-else-if="contract.type == 721 || contract.type == 1155">
                       <b-badge v-if="data.item.tokenId" pill @click="viewNonFungible(contract.type, contract.contract, data.item.tokenId)" v-b-popover.hover.ds500="'Click to view token'" variant="info">
@@ -1890,6 +1890,8 @@
                     tokens: event.tokens,
                   };
                 }
+                Vue.set(this, 'events', events);
+                // this.$forceUpdate();
               }
               rows = parseInt(rows) + records.length;
               done = records.length < this.DB_PROCESSING_BATCH_SIZE;
@@ -1923,10 +1925,12 @@
             do {
               const records = await db.events.where("contract").equals(contractData.contract).offset(rows).limit(this.DB_PROCESSING_BATCH_SIZE).toArray();
               console.log(now() + " INFO loadERC721 - records.length: " + records.length + ", first[0..9]: " + JSON.stringify(records.slice(0, 10).map(e => e.blockNumber + '.' + e.logIndex )));
-              for (const event of records.slice(0, 1)) {
-                console.log(now() + " INFO loadERC721 - event: " + JSON.stringify(event));
+              for (const event of records) {
+                // console.log(now() + " INFO loadERC721 - event: " + JSON.stringify(event));
                 events.push(event);
               }
+              Vue.set(this, 'events', events);
+              // this.$forceUpdate();
               rows = parseInt(rows) + records.length;
               done = records.length < this.DB_PROCESSING_BATCH_SIZE;
             } while (!done);
@@ -1944,10 +1948,12 @@
             do {
               const records = await db.events.where("contract").equals(contractData.contract).offset(rows).limit(this.DB_PROCESSING_BATCH_SIZE).toArray();
               console.log(now() + " INFO loadERC1155 - records.length: " + records.length + ", first[0..9]: " + JSON.stringify(records.slice(0, 10).map(e => e.blockNumber + '.' + e.logIndex )));
-              for (const event of records.slice(0, 1)) {
-                console.log(now() + " INFO loadERC1155 - event: " + JSON.stringify(event));
+              for (const event of records) {
+                // console.log(now() + " INFO loadERC1155 - event: " + JSON.stringify(event));
                 events.push(event);
               }
+              Vue.set(this, 'events', events);
+              // this.$forceUpdate();
               rows = parseInt(rows) + records.length;
               done = records.length < this.DB_PROCESSING_BATCH_SIZE;
             } while (!done);
