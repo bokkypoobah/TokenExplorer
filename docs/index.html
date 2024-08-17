@@ -67,6 +67,10 @@
 
           <b-card class="m-0 p-0 border-0" body-class="m-1 p-0">
 
+            <b-modal ref="modalsearchcontracts" v-model="modalSearchContracts.show" hide-footer header-class="m-0 px-3 py-2" body-bg-variant="light" size="lg">
+              <template #modal-title>Search for Token Contracts</template>
+            </b-modal>
+
             <b-modal ref="nonfungiblemodal" v-model="modalNonFungible.show" hide-footer header-class="m-0 px-3 py-2" body-bg-variant="light" size="lg">
               <template #modal-title>{{ "ERC-" + modalNonFungible.type + ' Non-Fungible Token' }}</template>
 
@@ -102,8 +106,6 @@
             </b-modal>
 
             <!-- HOME: -->
-            <!-- {{ EVENTTYPE }} -->
-            <!-- {{ EVENTNAME }} -->
             <b-card v-if="settings.tabIndex == 0" header="Home" no-body class="m-0 p-0">
               <b-card-body class="mt-1 p-1">
                 <h5>Welcome</h5>
@@ -150,6 +152,9 @@
                         <b-form-input type="text" size="sm" id="explorer-contract" v-model="settings.contract" @change="saveSettings(); loadData(settings.contract);" placeholder="Enter token contract address, or select from dropdown"></b-form-input>
                       </b-form-group>
                     </div>
+                    <!-- <div class="mt-0 pr-1">
+                      <b-button size="sm" @click="showModalSearchContracts" variant="link" v-b-popover.hover.ds500="'Search for token contracts'"><b-icon-search shift-v="+0" font-scale="1.2"></b-icon-search></b-button>
+                    </div> -->
                     <div class="mt-0 pr-0">
                       <b-dropdown size="sm" id="dropdown-left" text="" variant="link" v-b-popover.hover.ds500="'Some sample token contracts'" class="m-0 ml-1 p-0">
                         <b-dropdown-item v-if="sampleContracts('all').length == 0" disabled>No sample contracts on this network</b-dropdown-item>
@@ -158,9 +163,9 @@
                         </div>
                       </b-dropdown>
                     </div>
-                    <div class="mt-0 pr-1">
+                    <!-- <div class="mt-0 pr-1">
                       <b-button size="sm" :disabled="!validAddress(settings.contract)" :href="explorer + 'token/' + settings.contract + '#code'" variant="link" v-b-popover.hover.ds500="'View in explorer'" target="_blank" class="m-0 ml-2 mr-2 p-0"><b-icon-link45deg shift-v="-1" font-scale="1.2"></b-icon-link45deg></b-button>
-                    </div>
+                    </div> -->
                     <div class="mt-0 pr-1">
                       <b-button size="sm" :disabled="sync.completed != null || !validAddress(settings.contract)" @click="retrieveEvents" variant="primary">Retrieve</b-button>
                     </div>
@@ -903,6 +908,9 @@
               result: null,
             },
           },
+          modalSearchContracts: {
+            show: false,
+          },
           modalNonFungible: {
             show: false,
             type: null,
@@ -1558,6 +1566,9 @@
           nonFungibleViewerURL(contract, tokenId) {
             return this.nonFungibleViewer.replace(/\${contract}/, contract).replace(/\${tokenId}/, tokenId);
           },
+          async showModalSearchContracts() {
+            console.log(now() + " retrieveERC20 showModalSearchContracts");
+          },
           async viewNonFungible(type, contract, tokenId) {
             console.log(now() + " retrieveERC20 viewNonFungible - type: " + type + ", contract: " + contract + ", tokenId: " + tokenId);
             Vue.set(this.modalNonFungible, 'show', true);
@@ -1766,6 +1777,11 @@
             }
             const startBlock = 0;
             // const startBlock = latestBlockNumber - 10000;
+
+            // const deleteCall = await db.events.where("confirmations").below(parameter.confirmations).delete();
+            // const latest = await db.events.where('[chainId+blockNumber+logIndex]').between([parameter.chainId, Dexie.minKey, Dexie.minKey],[parameter.chainId, Dexie.maxKey, Dexie.maxKey]).last();
+            // const startBlock = (parameter.incrementalSync && latest) ? parseInt(latest.blockNumber) + 1: 0;
+
             this.sync.total = latestBlockNumber;
             this.sync.records = 0;
             await getLogs(startBlock, latestBlockNumber);
