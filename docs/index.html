@@ -857,7 +857,7 @@
             version: 3,
           },
 
-          contractData: {
+          contract: {
             chainId: null,
             contract: null,
             type: null,
@@ -1632,11 +1632,11 @@
             const db = new Dexie(this.db.name);
             db.version(this.db.version).stores(this.db.schemaDefinition);
             const provider = new ethers.providers.Web3Provider(window.ethereum);
-            const contract = ethers.utils.getAddress(this.settings.contract);
-            const erc20 = new ethers.Contract(contract, ERC20ABI, provider);
-            const erc165 = new ethers.Contract(contract, ERC165ABI, provider);
-            const erc721 = new ethers.Contract(contract, ERC721ABI, provider);
-            const erc1155 = new ethers.Contract(contract, ERC1155ABI, provider);
+            const contractAddress = ethers.utils.getAddress(this.settings.contract);
+            const erc20 = new ethers.Contract(contractAddress, ERC20ABI, provider);
+            const erc165 = new ethers.Contract(contractAddress, ERC165ABI, provider);
+            const erc721 = new ethers.Contract(contractAddress, ERC721ABI, provider);
+            const erc1155 = new ethers.Contract(contractAddress, ERC1155ABI, provider);
             const block = await provider.getBlock("latest");
             const latestBlockNumber = parseInt(block.number);
             const timestamp = parseInt(block.timestamp);
@@ -1693,17 +1693,18 @@
             //   this.description = "Not a token contract";
             // }
             // console.log(now() + " retrieveEvents - this.description: " + this.description);
-            const contractData = {
+            const contract = {
               chainId: this.chainId,
-              contract,
+              contract: contractAddress,
               type: this.type,
               symbol: this.symbol,
               name: this.name,
               decimals: this.decimals,
               totalSupply: this.totalSupply,
             };
-            // console.log(now() + " retrieveEvents - contractData: " + JSON.stringify(contractData));
-            await db.contracts.put(contractData).then(function() {
+            Vue.set(this, 'contract', contract);
+            console.log(now() + " retrieveEvents - this.contract: " + JSON.stringify(this.contract));
+            await db.contracts.put(contract).then(function() {
             }).catch(function(e) {
               console.log(now() + " ERROR retrieveMetadata - put: " + e.message);
             });
@@ -1776,13 +1777,13 @@
             this.sync.completed = null;
             this.sync.halt = false;
             // console.log(now() + " INFO retrieveEvents END - events: " + JSON.stringify(events, null, 2));
-            if (this.type == 20) {
-              this.collateERC20();
-            } else if (this.type == 721) {
-              this.collateERC721();
-            } else if (this.type == 1155) {
-              this.collateERC1155();
-            }
+            // if (this.type == 20) {
+            //   this.collateERC20();
+            // } else if (this.type == 721) {
+            //   this.collateERC721();
+            // } else if (this.type == 1155) {
+            //   this.collateERC1155();
+            // }
             // this.type, this.symbol, this.name, this.decimals, this.totalSupply
             // localStorage.tokenExplorerData = JSON.stringify({
             //   version: 0,
@@ -1795,18 +1796,19 @@
             //   approvals: this.approvals,
             //   approvalForAlls: this.approvalForAlls,
             // });
+            await this.loadData(contractAddress);
           },
 
-          async loadData(contract) {
-            console.log(now() + " INFO loadData BEGIN - contract: " + contract);
+          async loadData(contractAddress) {
+            console.log(now() + " INFO loadData BEGIN - contractAddress: " + contractAddress);
             const db = new Dexie(this.db.name);
             db.version(this.db.version).stores(this.db.schemaDefinition);
-            const data = await db.contracts.where("contract").equals(ethers.utils.getAddress(contract)).toArray();
-            let contractData = null;
+            const data = await db.contracts.where("contract").equals(ethers.utils.getAddress(contractAddress)).toArray();
+            let contract = null;
             if (data.length == 1) {
-              contractData = data[0];
-              console.log(now() + " INFO loadData - contractData: " + JSON.stringify(contractData, null, 2));
-              Vue.set(this, 'contractData', contractData);
+              contract = data[0];
+              console.log(now() + " INFO loadData - contract: " + JSON.stringify(contract, null, 2));
+              Vue.set(this, 'contract', contract);
             }
             // let rows = 0;
             // let done = false;
@@ -1816,13 +1818,13 @@
             //   rows = parseInt(rows) + data.length;
             //   done = data.length < this.DB_PROCESSING_BATCH_SIZE;
             // } while (!done);
-            if (contractData) {
-              if (contractData.type == 20) {
-                this.loadERC20(contractData);
-              } else if (contractData.type == 721) {
-                this.loadERC721(contractData);
-              } else if (contractData.type == 1155) {
-                this.loadERC1155(contractData);
+            if (contract) {
+              if (contract.type == 20) {
+                this.loadERC20(contract);
+              } else if (contract.type == 721) {
+                this.loadERC721(contract);
+              } else if (contract.type == 1155) {
+                this.loadERC1155(contract);
               }
             }
           },
