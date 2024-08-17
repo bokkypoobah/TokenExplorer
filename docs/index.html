@@ -181,7 +181,7 @@
                         <b-badge v-if="contract.decimals" variant="light" v-b-popover.hover.ds500="'decimals'" class="m-0 mt-1">
                           {{ contract.decimals }}
                         </b-badge>
-                        <b-badge v-if="contract.totalSupply" variant="light" v-b-popover.hover.ds500="'totalSupply ' + (totalSupply && formatNumber(totalSupply) || '')" class="m-0 mt-1">
+                        <b-badge v-if="contract.totalSupply" variant="light" v-b-popover.hover.ds500="'totalSupply ' + (contract.totalSupply && formatNumber(contract.totalSupply) || '')" class="m-0 mt-1">
                           {{ formatDecimals(contract.totalSupply, contract.decimals) }}
                         </b-badge>
                       </font>
@@ -836,9 +836,6 @@
               address: null,
               blockTxHash: null,
             },
-            // filter: null,
-            // tokenIdFilter: null,
-            // blockTxHashFilter: null,
             tableIndex: 0,
             eventsTable: {
               currentPage: 1,
@@ -874,14 +871,6 @@
             decimals: null,
             totalSupply: null,
           },
-
-          // TODO: Delete eventually
-          type: null,
-          symbol: null,
-          name: null,
-          decimals: null,
-          totalSupply: null,
-          // description: null,
 
           events: [],
           tokens: [],
