@@ -1,4 +1,4 @@
-function parseEventLogs(logs, type, chainId, latestBlockNumber) {
+function parseEventLogs(logs, contractType, chainId, latestBlockNumber) {
   // console.log(now() + " INFO parseEventLogs - logs: " + JSON.stringify(logs, null, 2));
   const erc721Interface = new ethers.utils.Interface(ERC721ABI);
   const erc1155Interface = new ethers.utils.Interface(ERC1155ABI);
@@ -29,9 +29,9 @@ function parseEventLogs(logs, type, chainId, latestBlockNumber) {
         }
         if (from) {
           if (log.topics.length == 4) {
-            eventRecord = { type: "Transfer", from, to, tokenId: tokensOrTokenId, eventType: 721 };
+            eventRecord = { type: "Transfer", from, to, tokenId: tokensOrTokenId /*, contractType: 721*/ };
           } else {
-            eventRecord = { type: "Transfer", from, to, tokens: tokensOrTokenId, eventType: 20 };
+            eventRecord = { type: "Transfer", from, to, tokens: tokensOrTokenId /*, contractType: 20*/ };
           }
         }
       } else if (log.topics[0] == "0x8c5be1e5ebec7d5bd14f71427d1e84f3dd0314c0f7b2291e5b200ac8c7c3b925") {
@@ -43,12 +43,12 @@ function parseEventLogs(logs, type, chainId, latestBlockNumber) {
           owner = ethers.utils.getAddress('0x' + log.topics[1].substring(26));
           spender = ethers.utils.getAddress('0x' + log.topics[2].substring(26));
           tokenId = ethers.BigNumber.from(log.topics[3]).toString();
-          eventRecord = { type: "Approval", owner, spender, tokenId, eventType: 721 };
+          eventRecord = { type: "Approval", owner, spender, tokenId /*, contractType: 721*/ };
         } else if (log.topics.length == 3) {
           owner = ethers.utils.getAddress('0x' + log.topics[1].substring(26));
           spender = ethers.utils.getAddress('0x' + log.topics[2].substring(26));
           tokens = ethers.BigNumber.from(log.data).toString();
-          eventRecord = { type: "Approval", owner, spender, tokens, eventType: 20 };
+          eventRecord = { type: "Approval", owner, spender, tokens /*, contractType: 20*/ };
         }
       } else if (log.topics[0] == "0x17307eab39ab6107e8899845ad3d59bd9653f200f220920489ca2b5937696c31") {
         // ERC-721 event ApprovalForAll(address indexed owner, address indexed operator, bool approved);
@@ -57,19 +57,19 @@ function parseEventLogs(logs, type, chainId, latestBlockNumber) {
         const operator = ethers.utils.getAddress('0x' + log.topics[2].substring(26));
         approved = ethers.BigNumber.from(log.data) > 0;
         // NOTE: Both erc1155 and erc721 fall in this category, but assigning all to erc721
-        eventRecord = { type: "ApprovalForAll", owner, operator, approved, eventType: 721 };
+        eventRecord = { type: "ApprovalForAll", owner, operator, approved /*, contractType: 721*/ };
       } else if (log.topics[0] == "0xc3d58168c5ae7397731d063d5bbf3d657854427343f4c083240f7aacaa2d0f62") {
         // ERC-1155 TransferSingle (index_topic_1 address operator, index_topic_2 address from, index_topic_3 address to, uint256 id, uint256 value)
         const logData = erc1155Interface.parseLog(log);
         const [operator, from, to, id, value] = logData.args;
         tokenId = ethers.BigNumber.from(id).toString();
-        eventRecord = { type: "TransferSingle", operator, from, to, tokenId, value: value.toString(), eventType: 1155 };
+        eventRecord = { type: "TransferSingle", operator, from, to, tokenId, value: value.toString() /*, contractType: 1155*/ };
       } else if (log.topics[0] == "0x4a39dc06d4c0dbc64b70af90fd698a233a518aa5d07e595d983b8c0526c8f7fb") {
         // ERC-1155 TransferBatch (index_topic_1 address operator, index_topic_2 address from, index_topic_3 address to, uint256[] ids, uint256[] values)
         const logData = erc1155Interface.parseLog(log);
         const [operator, from, to, ids, values] = logData.args;
         const tokenIds = ids.map(e => ethers.BigNumber.from(e).toString());
-        eventRecord = { type: "TransferBatch", operator, from, to, tokenIds, values: values.map(e => e.toString()), eventType: 1155 };
+        eventRecord = { type: "TransferBatch", operator, from, to, tokenIds, values: values.map(e => e.toString()) /*, contractType: 1155*/ };
       }
       if (eventRecord) {
         records.push( {
@@ -79,6 +79,7 @@ function parseEventLogs(logs, type, chainId, latestBlockNumber) {
           txIndex: parseInt(log.transactionIndex),
           txHash: log.transactionHash,
           contract,
+          contractType,
           ...eventRecord,
           confirmations: latestBlockNumber - log.blockNumber,
         });

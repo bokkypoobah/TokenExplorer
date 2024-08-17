@@ -19,6 +19,7 @@
     <script src="js/bootstrap-vue-icons.min.js"></script>
     <script src="js/ethers-5.7.umd.min.js" type="application/javascript"></script>
     <script src="js/moment.min.js"></script>
+    <script src="js/dexie.js"></script>
     <script src="globals.js"></script>
     <script src="customNames.js"></script>
     <script src="deploymentData.js"></script>
@@ -377,13 +378,13 @@
                   </template>
                   <template #cell(tokensTokenId)="data">
                     <div v-if="data.item.type == 'Transfer'">
-                      <div v-if="data.item.eventType == 20">
+                      <div v-if="data.item.contractType == 20">
                         <font size="-2" class="text-muted">
                           {{ formatNumber(data.item.tokens) }}
                         </font>
                         {{ formatDecimals(data.item.tokens, decimals) }}
                       </div>
-                      <div v-else-if="data.item.eventType == 721">
+                      <div v-else-if="data.item.contractType == 721">
                         <b-badge v-if="data.item.tokenId" pill @click="viewNonFungible(type, settings.contract, data.item.tokenId)" v-b-popover.hover.ds500="'Click to view token'" variant="info">
                           {{ data.item.tokenId }}
                         </b-badge>
@@ -403,7 +404,7 @@
                       </span>
                     </div>
                     <div v-else-if="data.item.type == 'Approval'">
-                      <div v-if="data.item.eventType == 20">
+                      <div v-if="data.item.contractType == 20">
                         <font size="-2" class="text-muted">
                           {{ formatNumber(data.item.tokens) }}
                         </font>
@@ -905,6 +906,17 @@
             total: null,
             completed: null,
             halt: false,
+          },
+          db: {
+            name: "tokenexplorerdata080a",
+            version: 1,
+            schemaDefinition: {
+              contracts: '[chainId+contract],contract',
+              events: '[chainId+blockNumber+logIndex],[blockNumber+contract],contract,[contract+confirmations]',
+              metadata: '[chainId+contract+tokenId],contract',
+              cache: '&objectName',
+            },
+            updated: null,
           },
           eventsSortOptions: [
             { value: 'txorderasc', text: '▲ TxOrder' },
@@ -1603,6 +1615,8 @@
 
           async retrieveEvents() {
             console.log(now() + " INFO retrieveEvents BEGIN - settings: " + JSON.stringify(this.settings));
+            const db = new Dexie(this.db.name);
+            db.version(this.db.version).stores(this.db.schemaDefinition);
             const provider = new ethers.providers.Web3Provider(window.ethereum);
             const erc20 = new ethers.Contract(this.settings.contract, ERC20ABI, provider);
             const erc165 = new ethers.Contract(this.settings.contract, ERC165ABI, provider);
@@ -1702,7 +1716,14 @@
                 const eventLogs = await provider.getLogs(filter);
                 t.sync.completed = toBlock;
                 t.sync.records += eventLogs.length;
-                const records = parseEventLogs(eventLogs, this.type, this.chainId, latestBlockNumber);
+                const records = parseEventLogs(eventLogs, t.type, t.chainId, latestBlockNumber);
+                if (records.length) {
+                  await db.events.bulkPut(records).then(function(lastKey) {
+                    console.log(now() + " INFO retrieveMetadata - bulkPut.lastKey: " + JSON.stringify(lastKey));
+                  }).catch(Dexie.BulkError, function(e) {
+                    console.log(now() + " INFO retrieveMetadata - bulkPut.lastKey: " + JSON.stringify(e.failures, null, 2));
+                  });
+                }
                 for (const record of records) {
                   events.push(record);
                 }
@@ -1975,6 +1996,8 @@
 
           async retrieveMetadata() {
             console.log(now() + " INFO retrieveMetadata BEGIN - settings: " + JSON.stringify(this.settings));
+            const db = new Dexie(this.db.name);
+            db.version(this.db.version).stores(this.db.schemaDefinition);
             const reservoirPrefix = this.network && this.network.reservoir || null;
             console.log(now() + " INFO retrieveMetadata - reservoirPrefix: " + reservoirPrefix);
             if (reservoirPrefix) {
@@ -1992,8 +2015,17 @@
                 if (data.tokens) {
                   this.sync.completed += data.tokens.length;
                   this.$forceUpdate();
+                  const records = data.tokens.map(e => parseReservoirTokenData(e));
+                  if (records.length) {
+                    await db.metadata.bulkPut(records).then(function(lastKey) {
+                      console.log(now() + " INFO retrieveMetadata - bulkPut.lastKey: " + JSON.stringify(lastKey));
+                    }).catch(Dexie.BulkError, function(e) {
+                      console.log(now() + " INFO retrieveMetadata - bulkPut.lastKey: " + JSON.stringify(e.failures, null, 2));
+                    });
+                  }
                   for (let record of data.tokens) {
                     const token = parseReservoirTokenData(record);
+                    console.log(JSON.stringify(token));
                     if (!(this.settings.contract in metadata)) {
                       metadata[this.settings.contract] = {
                         type: parseInt(token.type.substring(3)),
@@ -2015,7 +2047,7 @@
               this.sync.completed = null;
               this.sync.halt = false;
               Vue.set(this.metadata, this.chainId, metadata);
-              console.log(now() + " INFO retrieveMetadata - this.metadata: " + JSON.stringify(this.metadata, null, 2));
+              // console.log(now() + " INFO retrieveMetadata - this.metadata: " + JSON.stringify(this.metadata, null, 2));
               localStorage.tokenExplorerMetadata = JSON.stringify(this.metadata);
             }
           },
