@@ -822,7 +822,7 @@
           EVENT_APPROVAL: 3,
           EVENT_APPROVALFORALL: 4,
 
-          EVENT_CONFIRMATIONS: 1234567,
+          EVENT_CONFIRMATIONS: 12345,
           DB_PROCESSING_BATCH_SIZE: 10000,
 
           connected: false,
@@ -932,7 +932,7 @@
             halt: false,
           },
           db: {
-            name: "tokenexplorerdata080a",
+            name: "tokenexplorerdata080b",
             version: 1,
             schemaDefinition: {
               contracts: '[chainId+contract],contract',
@@ -1780,7 +1780,6 @@
             const deleted = await db.events.where('[contract+confirmations]').between([this.contract.contract, Dexie.minKey], [this.contract.contract, this.EVENT_CONFIRMATIONS]).delete();
             console.log(now() + " retrieveEvents - Low confirmation events deleted: " + deleted);
             const latest = await db.events.where('contract').equals(this.contract.contract).last();
-            console.log(now() + " retrieveEvents - latest: " + JSON.stringify(latest, null, 2));
             const startBlock = latest ? parseInt(latest.blockNumber) + 1: 0;
             console.log(now() + " retrieveEvents - startBlock: " + startBlock);
 
@@ -1792,13 +1791,13 @@
             this.sync.completed = null;
             this.sync.halt = false;
 
-            contract.events = events.length;
-            Vue.set(this, 'contract', contract);
-            console.log(now() + " retrieveEvents - Updated events this.contract: " + JSON.stringify(this.contract));
-            await db.contracts.put(contract).then(function() {
-            }).catch(function(e) {
-              console.log(now() + " ERROR retrieveMetadata - put: " + e.message);
-            });
+            console.log(now() + " retrieveEvents - Updated events: " + events.length);
+            const count = await db.events.where('contract').equals(this.contract.contract).count();
+            console.log(now() + " retrieveEvents - Total number of events: " + count);
+            Vue.set(this.contract, 'events', count);
+            const recordsUpdated = await db.contracts.where('contract').equals(this.contract.contract).modify({ events: count });
+            console.log(now() + " retrieveEvents - recordsUpdated: " + JSON.stringify(recordsUpdated, null, 2));
+
             await this.loadData(contractAddress);
           },
 
@@ -1807,13 +1806,13 @@
             const db = new Dexie(this.db.name);
             db.version(this.db.version).stores(this.db.schemaDefinition);
             const contracts = await db.contracts.toArray();
-            console.log(now() + " INFO loadData - contracts: " + JSON.stringify(contracts.map(e => e.contract + ' ' + e.contractType + ' ' + e.symbol + ' ' + e.name), null, 2));
+            // console.log(now() + " INFO loadData - contracts: " + JSON.stringify(contracts.map(e => e.contract + ' ' + e.contractType + ' ' + e.symbol + ' ' + e.name), null, 2));
             Vue.set(this, 'contracts', contracts);
             const data = await db.contracts.where("contract").equals(ethers.utils.getAddress(contractAddress)).toArray();
             let contract = null;
             if (data.length == 1) {
               contract = data[0];
-              console.log(now() + " INFO loadData - contract: " + JSON.stringify(contract));
+              // console.log(now() + " INFO loadData - contract: " + JSON.stringify(contract));
               Vue.set(this, 'contract', contract);
             }
             if (contract) {
