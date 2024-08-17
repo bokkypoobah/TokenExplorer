@@ -1733,9 +1733,9 @@
                 const records = parseEventLogs(eventLogs, t.type, t.chainId, latestBlockNumber);
                 if (records.length) {
                   await db.events.bulkPut(records).then(function(lastKey) {
-                    console.log(now() + " INFO retrieveMetadata - bulkPut.lastKey: " + JSON.stringify(lastKey));
+                    console.log(now() + " INFO retrieveEvents - bulkPut.lastKey: " + JSON.stringify(lastKey));
                   }).catch(Dexie.BulkError, function(e) {
-                    console.log(now() + " INFO retrieveMetadata - bulkPut.lastKey: " + JSON.stringify(e.failures, null, 2));
+                    console.log(now() + " INFO retrieveEvents - bulkPut.lastKey: " + JSON.stringify(e.failures, null, 2));
                   });
                 }
                 for (const record of records) {
@@ -1768,7 +1768,7 @@
             } else if (this.type == 1155) {
               this.collateERC1155();
             }
-            this.type, this.symbol, this.name, this.decimals, this.totalSupply
+            // this.type, this.symbol, this.name, this.decimals, this.totalSupply
             // localStorage.tokenExplorerData = JSON.stringify({
             //   version: 0,
             //   type: this.type,
