@@ -872,8 +872,10 @@
             totalSupply: null,
             blockNumber: null,
             timestamp: null,
+            events: null,
           },
 
+          contracts: [],
           events: [],
           tokens: [],
           approvalForAlls: [],
@@ -1695,6 +1697,7 @@
               totalSupply,
               blockNumber: latestBlockNumber,
               timestamp,
+              events: 0,
             };
             Vue.set(this, 'contract', contract);
             console.log(now() + " retrieveEvents - this.contract: " + JSON.stringify(this.contract));
@@ -1770,6 +1773,15 @@
             this.sync.total = null;
             this.sync.completed = null;
             this.sync.halt = false;
+
+            contract.events = events.length;
+            Vue.set(this, 'contract', contract);
+            console.log(now() + " retrieveEvents - Updated events this.contract: " + JSON.stringify(this.contract));
+            await db.contracts.put(contract).then(function() {
+            }).catch(function(e) {
+              console.log(now() + " ERROR retrieveMetadata - put: " + e.message);
+            });
+
             // console.log(now() + " INFO retrieveEvents END - events: " + JSON.stringify(events, null, 2));
             // if (this.type == 20) {
             //   this.collateERC20();
@@ -1797,21 +1809,16 @@
             console.log(now() + " INFO loadData BEGIN - contractAddress: " + contractAddress);
             const db = new Dexie(this.db.name);
             db.version(this.db.version).stores(this.db.schemaDefinition);
+            const contracts = await db.contracts.toArray();
+            console.log(now() + " INFO loadData - contracts: " + JSON.stringify(contracts.map(e => e.contract + ' ' + e.contractType + ' ' + e.symbol + ' ' + e.name), null, 2));
+            Vue.set(this, 'contracts', contracts);
             const data = await db.contracts.where("contract").equals(ethers.utils.getAddress(contractAddress)).toArray();
             let contract = null;
             if (data.length == 1) {
               contract = data[0];
-              console.log(now() + " INFO loadData - contract: " + JSON.stringify(contract, null, 2));
+              console.log(now() + " INFO loadData - contract: " + JSON.stringify(contract));
               Vue.set(this, 'contract', contract);
             }
-            // let rows = 0;
-            // let done = false;
-            // do {
-            //   const data = await db.events.where("contract").equals(contract).offset(rows).limit(this.DB_PROCESSING_BATCH_SIZE).toArray();
-            //   console.log(now() + " INFO loadData - data.length: " + data.length + ", first[0..9]: " + JSON.stringify(data.slice(0, 10).map(e => e.blockNumber + '.' + e.logIndex )));
-            //   rows = parseInt(rows) + data.length;
-            //   done = data.length < this.DB_PROCESSING_BATCH_SIZE;
-            // } while (!done);
             if (contract) {
               if (contract.contractType == 20) {
                 this.loadERC20(contract);
