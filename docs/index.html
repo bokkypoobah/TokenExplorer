@@ -860,7 +860,7 @@
           name: null,
           decimals: null,
           totalSupply: null,
-          description: null,
+          // description: null,
           events: [],
           tokens: [],
           approvalForAlls: [],
@@ -1668,16 +1668,30 @@
                 }
               }
             }
-            if (this.type == 20) {
-              this.description = "ERC-20 " + this.symbol + " " + this.name + " " + this.decimals + " " + this.formatDecimals(this.totalSupply, this.decimals);
-            } else if (this.type == 721) {
-              this.description = "ERC-721 " + this.symbol;
-            } else if (this.type == 1155) {
-              this.description = "ERC-1155";
-            } else {
-              this.description = "Not a token contract";
-            }
-            console.log(now() + " retrieveEvents - this.description: " + this.description);
+            // if (this.type == 20) {
+            //   this.description = "ERC-20 " + this.symbol + " " + this.name + " " + this.decimals + " " + this.formatDecimals(this.totalSupply, this.decimals);
+            // } else if (this.type == 721) {
+            //   this.description = "ERC-721 " + this.symbol;
+            // } else if (this.type == 1155) {
+            //   this.description = "ERC-1155";
+            // } else {
+            //   this.description = "Not a token contract";
+            // }
+            // console.log(now() + " retrieveEvents - this.description: " + this.description);
+            const record = {
+              chainId: this.chainId,
+              contract: this.settings.contract,
+              type: this.type,
+              symbol: this.symbol,
+              name: this.name,
+              decimals: this.decimals,
+              totalSupply: this.totalSupply,
+            };
+            // console.log(now() + " retrieveEvents - record: " + JSON.stringify(record));
+            await db.contracts.put(record).then(function() {
+            }).catch(function(e) {
+              console.log(now() + " ERROR retrieveMetadata - put: " + e.message);
+            });
 
             // Retrieve Event Logs
             const events = [];
@@ -2025,7 +2039,7 @@
                   }
                   for (let record of data.tokens) {
                     const token = parseReservoirTokenData(record);
-                    console.log(JSON.stringify(token));
+                    // console.log(JSON.stringify(token));
                     if (!(this.settings.contract in metadata)) {
                       metadata[this.settings.contract] = {
                         type: parseInt(token.type.substring(3)),
