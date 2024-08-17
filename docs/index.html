@@ -1891,7 +1891,6 @@
                   };
                 }
                 Vue.set(this, 'events', events);
-                // this.$forceUpdate();
               }
               rows = parseInt(rows) + records.length;
               done = records.length < this.DB_PROCESSING_BATCH_SIZE;
@@ -1920,6 +1919,9 @@
             const db = new Dexie(this.db.name);
             db.version(this.db.version).stores(this.db.schemaDefinition);
             const events = [];
+            const tokensCollator = {};
+            const approvalForAllsCollator = {};
+            const approvalsCollator = {};
             let rows = 0;
             let done = false;
             do {
@@ -1930,7 +1932,6 @@
                 events.push(event);
               }
               Vue.set(this, 'events', events);
-              // this.$forceUpdate();
               rows = parseInt(rows) + records.length;
               done = records.length < this.DB_PROCESSING_BATCH_SIZE;
             } while (!done);
@@ -1943,6 +1944,8 @@
             const db = new Dexie(this.db.name);
             db.version(this.db.version).stores(this.db.schemaDefinition);
             const events = [];
+            const tokensCollator = {};
+            const approvalForAllsCollator = {};
             let rows = 0;
             let done = false;
             do {
@@ -1953,7 +1956,6 @@
                 events.push(event);
               }
               Vue.set(this, 'events', events);
-              // this.$forceUpdate();
               rows = parseInt(rows) + records.length;
               done = records.length < this.DB_PROCESSING_BATCH_SIZE;
             } while (!done);
