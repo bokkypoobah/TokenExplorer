@@ -857,12 +857,24 @@
             version: 3,
           },
 
+          contractData: {
+            chainId: null,
+            contract: null,
+            type: null,
+            symbol: null,
+            name: null,
+            decimals: null,
+            totalSupply: null,
+          },
+
+          // TODO: Delete eventually
           type: null,
           symbol: null,
           name: null,
           decimals: null,
           totalSupply: null,
           // description: null,
+
           events: [],
           tokens: [],
           approvalForAlls: [],
@@ -1681,7 +1693,7 @@
             //   this.description = "Not a token contract";
             // }
             // console.log(now() + " retrieveEvents - this.description: " + this.description);
-            const record = {
+            const contractData = {
               chainId: this.chainId,
               contract,
               type: this.type,
@@ -1690,8 +1702,8 @@
               decimals: this.decimals,
               totalSupply: this.totalSupply,
             };
-            // console.log(now() + " retrieveEvents - record: " + JSON.stringify(record));
-            await db.contracts.put(record).then(function() {
+            // console.log(now() + " retrieveEvents - contractData: " + JSON.stringify(contractData));
+            await db.contracts.put(contractData).then(function() {
             }).catch(function(e) {
               console.log(now() + " ERROR retrieveMetadata - put: " + e.message);
             });
@@ -1794,6 +1806,7 @@
             if (data.length == 1) {
               contractData = data[0];
               console.log(now() + " INFO loadData - contractData: " + JSON.stringify(contractData, null, 2));
+              Vue.set(this, 'contractData', contractData);
             }
             // let rows = 0;
             // let done = false;
@@ -1908,7 +1921,7 @@
             do {
               const records = await db.events.where("contract").equals(contractData.contract).offset(rows).limit(this.DB_PROCESSING_BATCH_SIZE).toArray();
               console.log(now() + " INFO loadERC721 - records.length: " + records.length + ", first[0..9]: " + JSON.stringify(records.slice(0, 10).map(e => e.blockNumber + '.' + e.logIndex )));
-              for (const event of records) {
+              for (const event of records.slice(0, 1)) {
                 console.log(now() + " INFO loadERC721 - event: " + JSON.stringify(event));
                 events.push(event);
               }
@@ -1929,7 +1942,7 @@
             do {
               const records = await db.events.where("contract").equals(contractData.contract).offset(rows).limit(this.DB_PROCESSING_BATCH_SIZE).toArray();
               console.log(now() + " INFO loadERC1155 - records.length: " + records.length + ", first[0..9]: " + JSON.stringify(records.slice(0, 10).map(e => e.blockNumber + '.' + e.logIndex )));
-              for (const event of records) {
+              for (const event of records.slice(0, 1)) {
                 console.log(now() + " INFO loadERC1155 - event: " + JSON.stringify(event));
                 events.push(event);
               }
