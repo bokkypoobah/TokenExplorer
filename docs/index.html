@@ -1930,6 +1930,37 @@
               for (const event of records) {
                 // console.log(now() + " INFO loadERC721 - event: " + JSON.stringify(event));
                 events.push(event);
+                if (event.type == "Transfer") {
+                  tokensCollator[event.tokenId] = {
+                    blockNumber: event.blockNumber,
+                    txIndex: event.txIndex,
+                    txHash: event.txHash,
+                    logIndex: event.logIndex,
+                    owner: event.to,
+                  };
+                } else if (event.type == "Approval") {
+                  approvalsCollator[event.tokenId] = {
+                    blockNumber: event.blockNumber,
+                    txIndex: event.txIndex,
+                    txHash: event.txHash,
+                    logIndex: event.logIndex,
+                    owner: event.owner,
+                    spender: event.spender,
+                  };
+                } else if (event.type == "ApprovalForAll") {
+                  if (!(event.owner in approvalForAllsCollator)) {
+                    approvalForAllsCollator[event.owner] = {};
+                  }
+                  approvalForAllsCollator[event.owner][event.operator] = {
+                    blockNumber: event.blockNumber,
+                    txIndex: event.txIndex,
+                    txHash: event.txHash,
+                    logIndex: event.logIndex,
+                    approved: event.approved,
+                  };
+                } else {
+                  console.log(now() + " INFO loadERC721 - ELSE event: " + JSON.stringify(event));
+                }
               }
               Vue.set(this, 'events', events);
               rows = parseInt(rows) + records.length;
@@ -1937,6 +1968,26 @@
             } while (!done);
             Vue.set(this, 'events', events);
             console.log(now() + " INFO loadERC721 - events[0..2]: " + JSON.stringify(events.slice(0, 3), null, 2));
+            console.log(now() + " INFO collateERC721 - tokensCollator: " + JSON.stringify(tokensCollator, null, 2));
+            console.log(now() + " INFO collateERC721 - approvalForAllsCollator: " + JSON.stringify(approvalForAllsCollator, null, 2));
+            console.log(now() + " INFO collateERC721 - approvalsCollator: " + JSON.stringify(approvalsCollator, null, 2));
+            const tokens = [];
+            for (const [ tokenId, tokenData ] of Object.entries(tokensCollator)) {
+              tokens.push({ tokenId, ...tokenData });
+            }
+            Vue.set(this, 'tokens', tokens);
+            const approvalForAlls = [];
+            for (const [ owner, ownerData ] of Object.entries(approvalForAllsCollator)) {
+              for (const [ operator, operatorData ] of Object.entries(ownerData)) {
+                approvalForAlls.push({ owner, operator, ...operatorData });
+              }
+            }
+            Vue.set(this, 'approvalForAlls', approvalForAlls);
+            const approvals = [];
+            for (const [ tokenId, tokenData ] of Object.entries(approvalsCollator)) {
+              approvals.push({ tokenId, ...tokenData });
+            }
+            Vue.set(this, 'approvals', approvals);
           },
 
           async loadERC1155(contractData) {
