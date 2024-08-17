@@ -1818,51 +1818,126 @@
             console.log(now() + " INFO loadERC20 BEGIN - contractData.contract: " + contractData.contract);
             const db = new Dexie(this.db.name);
             db.version(this.db.version).stores(this.db.schemaDefinition);
+            const events = [];
+            const tokensCollator = {};
+            const approvalsCollator = {};
             let rows = 0;
             let done = false;
             do {
-              const data = await db.events.where("contract").equals(contractData.contract).offset(rows).limit(this.DB_PROCESSING_BATCH_SIZE).toArray();
-              console.log(now() + " INFO loadERC20 - data.length: " + data.length + ", first[0..9]: " + JSON.stringify(data.slice(0, 10).map(e => e.blockNumber + '.' + e.logIndex )));
-              for (const item of data) {
-                console.log(now() + " INFO loadERC20 - item: " + JSON.stringify(item));
+              const records = await db.events.where("contract").equals(contractData.contract).offset(rows).limit(this.DB_PROCESSING_BATCH_SIZE).toArray();
+              console.log(now() + " INFO loadERC20 - records.length: " + records.length + ", first[0..9]: " + JSON.stringify(records.slice(0, 10).map(e => e.blockNumber + '.' + e.logIndex )));
+              for (const event of records) {
+                // console.log(now() + " INFO loadERC20 - event: " + JSON.stringify(event));
+                events.push(event);
+                if (event.type == "Transfer") {
+                  if (!(event.from in tokensCollator)) {
+                    tokensCollator[event.from] = {
+                      blockNumber: event.blockNumber,
+                      txIndex: event.txIndex,
+                      txHash: event.txHash,
+                      logIndex: event.logIndex,
+                      tokens: event.from == ADDRESS0 ? "0" : ethers.BigNumber.from(0).sub(event.tokens).toString(),
+                    };
+                  } else {
+                    tokensCollator[event.from].blockNumber = event.blockNumber;
+                    tokensCollator[event.from].txIndex = event.txIndex;
+                    tokensCollator[event.from].txHash = event.txHash;
+                    tokensCollator[event.from].logIndex = event.logIndex;
+                    tokensCollator[event.from].blockNumber = event.blockNumber;
+                    if (event.from != ADDRESS0) {
+                      tokensCollator[event.from].tokens = ethers.BigNumber.from(tokensCollator[event.from].tokens).sub(event.tokens).toString();
+                    }
+                  }
+                  if (!(event.to in tokensCollator)) {
+                    tokensCollator[event.to] = {
+                      blockNumber: event.blockNumber,
+                      txIndex: event.txIndex,
+                      txHash: event.txHash,
+                      logIndex: event.logIndex,
+                      tokens: event.tokens,
+                    };
+                  } else {
+                    tokensCollator[event.to].blockNumber = event.blockNumber;
+                    tokensCollator[event.to].txIndex = event.txIndex;
+                    tokensCollator[event.to].txHash = event.txHash;
+                    tokensCollator[event.to].logIndex = event.logIndex;
+                    tokensCollator[event.to].tokens = ethers.BigNumber.from(tokensCollator[event.to].tokens).add(event.tokens).toString();
+                  }
+                } else if (event.type == "Approval") {
+                  if (!(event.owner in approvalsCollator)) {
+                    approvalsCollator[event.owner] = {};
+                  }
+                  approvalsCollator[event.owner][event.spender] = {
+                    blockNumber: event.blockNumber,
+                    txIndex: event.txIndex,
+                    txHash: event.txHash,
+                    logIndex: event.logIndex,
+                    tokens: event.tokens,
+                  };
+                }
               }
-              rows = parseInt(rows) + data.length;
-              done = data.length < this.DB_PROCESSING_BATCH_SIZE;
+              rows = parseInt(rows) + records.length;
+              done = records.length < this.DB_PROCESSING_BATCH_SIZE;
             } while (!done);
+            Vue.set(this, 'events', events);
+            console.log(now() + " INFO loadERC20 - events[0..2]: " + JSON.stringify(events.slice(0, 3), null, 2));
+            console.log(now() + " INFO loadERC20 - tokensCollator: " + JSON.stringify(tokensCollator, null, 2));
+            console.log(now() + " INFO loadERC20 - approvalsCollator: " + JSON.stringify(approvalsCollator, null, 2));
+            const tokens = [];
+            for (const [ owner, balance ] of Object.entries(tokensCollator)) {
+              tokens.push({ owner, ...balance });
+            }
+            Vue.set(this, 'tokens', tokens);
+            const approvals = [];
+            for (const [ owner, spenders ] of Object.entries(approvalsCollator)) {
+              for (const [spender, tokens] of Object.entries(spenders)) {
+                approvals.push({ owner, spender, ...tokens });
+              }
+            }
+            Vue.set(this, 'approvals', approvals);
+            Vue.set(this, 'approvalForAlls', []);
           },
 
-          async loadERC721(contract) {
+          async loadERC721(contractData) {
             console.log(now() + " INFO loadERC721 BEGIN - contractData.contract: " + contractData.contract);
             const db = new Dexie(this.db.name);
             db.version(this.db.version).stores(this.db.schemaDefinition);
+            const events = [];
             let rows = 0;
             let done = false;
             do {
-              const data = await db.events.where("contract").equals(contractData.contract).offset(rows).limit(this.DB_PROCESSING_BATCH_SIZE).toArray();
-              console.log(now() + " INFO loadERC721 - data.length: " + data.length + ", first[0..9]: " + JSON.stringify(data.slice(0, 10).map(e => e.blockNumber + '.' + e.logIndex )));
-              for (const item of data) {
-                console.log(now() + " INFO loadERC721 - item: " + JSON.stringify(item));
+              const records = await db.events.where("contract").equals(contractData.contract).offset(rows).limit(this.DB_PROCESSING_BATCH_SIZE).toArray();
+              console.log(now() + " INFO loadERC721 - records.length: " + records.length + ", first[0..9]: " + JSON.stringify(records.slice(0, 10).map(e => e.blockNumber + '.' + e.logIndex )));
+              for (const event of records) {
+                console.log(now() + " INFO loadERC721 - event: " + JSON.stringify(event));
+                events.push(event);
               }
-              rows = parseInt(rows) + data.length;
-              done = data.length < this.DB_PROCESSING_BATCH_SIZE;
+              rows = parseInt(rows) + records.length;
+              done = records.length < this.DB_PROCESSING_BATCH_SIZE;
             } while (!done);
+            Vue.set(this, 'events', events);
+            console.log(now() + " INFO loadERC721 - events[0..2]: " + JSON.stringify(events.slice(0, 3), null, 2));
           },
 
-          async loadERC1155(contract) {
+          async loadERC1155(contractData) {
             console.log(now() + " INFO loadERC1155 BEGIN - contractData.contract: " + contractData.contract);
             const db = new Dexie(this.db.name);
             db.version(this.db.version).stores(this.db.schemaDefinition);
+            const events = [];
             let rows = 0;
             let done = false;
             do {
-              const data = await db.events.where("contract").equals(contractData.contract).offset(rows).limit(this.DB_PROCESSING_BATCH_SIZE).toArray();
-              console.log(now() + " INFO loadERC1155 - data.length: " + data.length + ", first[0..9]: " + JSON.stringify(data.slice(0, 10).map(e => e.blockNumber + '.' + e.logIndex )));
-              for (const item of data) {
-                console.log(now() + " INFO loadERC1155 - item: " + JSON.stringify(item));
+              const records = await db.events.where("contract").equals(contractData.contract).offset(rows).limit(this.DB_PROCESSING_BATCH_SIZE).toArray();
+              console.log(now() + " INFO loadERC1155 - records.length: " + records.length + ", first[0..9]: " + JSON.stringify(records.slice(0, 10).map(e => e.blockNumber + '.' + e.logIndex )));
+              for (const event of records) {
+                console.log(now() + " INFO loadERC1155 - event: " + JSON.stringify(event));
+                events.push(event);
               }
-              rows = parseInt(rows) + data.length;
-              done = data.length < this.DB_PROCESSING_BATCH_SIZE;
+              rows = parseInt(rows) + records.length;
+              done = records.length < this.DB_PROCESSING_BATCH_SIZE;
             } while (!done);
+            Vue.set(this, 'events', events);
+            console.log(now() + " INFO loadERC1155 - events[0..2]: " + JSON.stringify(events.slice(0, 3), null, 2));
           },
 
           async collateERC20() {
