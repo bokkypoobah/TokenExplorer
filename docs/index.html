@@ -170,7 +170,7 @@
                     <div class="mt-0 pr-1" style="width: 23.0rem;">
                       <font size="-1">
                         <b-badge variant="light" v-b-popover.hover.ds500="contract.decimals != null && contract.totalSupply && ('symbol: ' + contract.symbol + ', name: ' + contract.name + ', decimals: ' + contract.decimals + ', totalSupply: ' + formatDecimals(contract.totalSupply, contract.decimals) + ' (' + formatNumber(contract.totalSupply) + ')') || ''" class="m-0 mt-1 ml-2 mr-1">
-                          {{ (contract.type && ('ERC-' + contract.type) || 'Enter token contract address and click [Retrieve]') }}
+                          {{ (contract.contractType && ('ERC-' + contract.contractType) || 'Enter token contract address and click [Retrieve]') }}
                         </b-badge>
                         <b-badge v-if="contract.symbol" variant="light" v-b-popover.hover.ds500="'symbol'" class="m-0 mt-1">
                           {{ contract.symbol }}
@@ -212,7 +212,7 @@
 
               <div class="d-flex flex-wrap m-0 p-0">
                 <div class="mt-0 pr-1" style="width: 10.0rem;">
-                  <b-form-input :disabled="contract.type != 721 && contract.type != 1155" type="text" size="sm" v-model.trim="settings.filter.tokenId" @change="saveSettings" debounce="600" v-b-popover.hover.ds500="'Regex search'" placeholder="🔍 tokenid"></b-form-input>
+                  <b-form-input :disabled="contract.contractType != 721 && contract.contractType != 1155" type="text" size="sm" v-model.trim="settings.filter.tokenId" @change="saveSettings" debounce="600" v-b-popover.hover.ds500="'Regex search'" placeholder="🔍 tokenid"></b-form-input>
                 </div>
                 <div class="mt-0 pr-1" style="width: 10.0rem;">
                   <b-form-input type="text" size="sm" v-model.trim="settings.filter.address" @change="saveSettings" debounce="600" v-b-popover.hover.ds500="'Regex search'" placeholder="🔍 address"></b-form-input>
@@ -257,13 +257,13 @@
                     <b-form-select size="sm" v-model="settings.eventsTable.sortOption" @change="saveSettings" :options="eventsSortOptions" v-b-popover.hover.bottom="'Yeah. Sort'"></b-form-select>
                   </div>
                   <div v-else-if="settings.tableIndex == 1">
-                    <div v-if="contract.type != 721 && contract.type != 1155">
+                    <div v-if="contract.contractType != 721 && contract.contractType != 1155">
                       <b-form-select size="sm" v-model="settings.tokensTable.sortOptionERC20" @change="saveSettings" :options="erc20TokensSortOptions" v-b-popover.hover.bottom="'Yeah. Sort'"></b-form-select>
                     </div>
-                    <div v-if="contract.type == 721">
+                    <div v-if="contract.contractType == 721">
                       <b-form-select size="sm" v-model="settings.tokensTable.sortOptionERC721" @change="saveSettings" :options="erc721And1155TokensSortOptions" v-b-popover.hover.bottom="'Yeah. Sort'"></b-form-select>
                     </div>
-                    <div v-if="contract.type == 1155">
+                    <div v-if="contract.contractType == 1155">
                       <b-form-select size="sm" v-model="settings.tokensTable.sortOptionERC1155" @change="saveSettings" :options="erc721And1155TokensSortOptions" v-b-popover.hover.bottom="'Yeah. Sort'"></b-form-select>
                     </div>
                   </div>
@@ -334,42 +334,42 @@
                           {{ data.item.blockNumber + ':' + data.item.txIndex }}
                         </span>
                       </b-link>
-                      <font size="-1" v-b-popover.hover.ds500="'logIndex'" class="text-muted">{{ data.item.logIndex }}</font>
-                      <font size="-1" v-b-popover.hover.ds500="'txHash'" class="text-muted">{{ data.item.txHash.substring(0, 8) + '...' + data.item.txHash.slice(-6) }}</font>
+                      <font size="-2" v-b-popover.hover.ds500="'logIndex'" class="text-muted">{{ data.item.logIndex }}</font>
+                      <font size="-2" v-b-popover.hover.ds500="'txHash'" class="text-muted">{{ data.item.txHash.substring(0, 8) + '...' + data.item.txHash.slice(-6) }}</font>
                     </font>
                   </template>
                   <template #cell(type)="data">
-                    <font size="-1">{{ EVENTNAME[data.item.type] }}</font>
+                    <font size="-1">{{ EVENTNAME[data.item.eventType] }}</font>
                   </template>
                   <template #cell(fromOwner)="data">
-                    <div v-if="data.item.type == EVENT_TRANSFER || data.item.type == EVENT_TRANSFERSINGLE || data.item.type == EVENT_TRANSFERBATCH">
+                    <div v-if="data.item.eventType == EVENT_TRANSFER || data.item.eventType == EVENT_TRANSFERSINGLE || data.item.eventType == EVENT_TRANSFERBATCH">
                       <b-link size="sm" :href="explorer + 'address/' + data.item.from" variant="link" v-b-popover.hover.ds500="'Transfer from ' + data.item.from" target="_blank">
                         {{ data.item.from.substring(0, 8) + '...' + data.item.from.slice(-6) }}
                       </b-link>
                     </div>
-                    <div v-else-if="data.item.type == EVENT_APPROVAL">
+                    <div v-else-if="data.item.eventType == EVENT_APPROVAL">
                       <b-link size="sm" :href="explorer + 'address/' + data.item.owner" variant="link" v-b-popover.hover.ds500="'Approval owner ' + data.item.owner" target="_blank">
                         {{ data.item.owner.substring(0, 8) + '...' + data.item.owner.slice(-6) }}
                       </b-link>
                     </div>
-                    <div v-else-if="data.item.type == EVENT_APPROVALFORALL">
+                    <div v-else-if="data.item.eventType == EVENT_APPROVALFORALL">
                       <b-link size="sm" :href="explorer + 'address/' + data.item.owner" variant="link" v-b-popover.hover.ds500="'Approval owner ' + data.item.owner" target="_blank">
                         {{ data.item.owner.substring(0, 8) + '...' + data.item.owner.slice(-6) }}
                       </b-link>
                     </div>
                   </template>
                   <template #cell(toSpenderOperator)="data">
-                    <div v-if="data.item.type == EVENT_TRANSFER || data.item.type == EVENT_TRANSFERSINGLE || data.item.type == EVENT_TRANSFERBATCH">
+                    <div v-if="data.item.eventType == EVENT_TRANSFER || data.item.eventType == EVENT_TRANSFERSINGLE || data.item.eventType == EVENT_TRANSFERBATCH">
                       <b-link size="sm" :href="explorer + 'address/' + data.item.to" variant="link" v-b-popover.hover.ds500="'Transfer to ' + data.item.to" target="_blank">
                         {{ data.item.to.substring(0, 8) + '...' + data.item.to.slice(-6) }}
                       </b-link>
                     </div>
-                    <div v-else-if="data.item.type == EVENT_APPROVAL">
+                    <div v-else-if="data.item.eventType == EVENT_APPROVAL">
                       <b-link size="sm" :href="explorer + 'address/' + data.item.spender" variant="link" v-b-popover.hover.ds500="'Approval spender ' + data.item.spender" target="_blank">
                         {{ data.item.spender.substring(0, 8) + '...' + data.item.spender.slice(-6) }}
                       </b-link>
                     </div>
-                    <div v-else-if="data.item.type == EVENT_APPROVALFORALL">
+                    <div v-else-if="data.item.eventType == EVENT_APPROVALFORALL">
                       <b-link size="sm" :href="explorer + 'address/' + data.item.operator" variant="link" v-b-popover.hover.ds500="'ApprovalForAll operator ' + data.item.operator" target="_blank">
                         {{ data.item.operator.substring(0, 8) + '...' + data.item.operator.slice(-6) }}
                       </b-link>
@@ -379,7 +379,7 @@
                     {{ contract.type == 721 ? "Token Id" : ( contract.type == 1155 ? "Token Id(s)" : "Tokens") }}
                   </template>
                   <template #cell(tokensTokenId)="data">
-                    <div v-if="data.item.type == EVENT_TRANSFER">
+                    <div v-if="data.item.eventType == EVENT_TRANSFER">
                       <div v-if="data.item.contractType == 20">
                         <font size="-2" class="text-muted">
                           {{ formatNumber(data.item.tokens) }}
@@ -392,12 +392,12 @@
                         </b-badge>
                       </div>
                     </div>
-                    <div v-else-if="data.item.type == EVENT_TRANSFERSINGLE">
+                    <div v-else-if="data.item.eventType == EVENT_TRANSFERSINGLE">
                       <b-badge v-if="data.item.tokenId" pill @click="viewNonFungible(type, settings.contract, data.item.tokenId)" v-b-popover.hover.ds500="'Click to view token'" variant="info">
                         {{ data.item.tokenId }}
                       </b-badge>
                     </div>
-                    <div v-else-if="data.item.type == EVENT_TRANSFERBATCH">
+                    <div v-else-if="data.item.eventType == EVENT_TRANSFERBATCH">
                       <span v-for="(item, index) of data.item.tokenIds" v-bind:key="index">
                         <b-badge pill @click="viewNonFungible(1155, settings.contract, data.item.tokenIds[index])" variant="info">
                           {{ data.item.tokenIds[index] }}
@@ -405,7 +405,7 @@
                         <font size="-1" class="text-muted">{{ 'x' + data.item.values[index] }}</font>
                       </span>
                     </div>
-                    <div v-else-if="data.item.type == EVENT_APPROVAL">
+                    <div v-else-if="data.item.eventType == EVENT_APPROVAL">
                       <div v-if="data.item.contractType == 20">
                         <font size="-2" class="text-muted">
                           {{ formatNumber(data.item.tokens) }}
@@ -418,7 +418,7 @@
                         </b-badge>
                       </div>
                     </div>
-                    <div v-else-if="data.item.type == EVENT_APPROVALFORALL">
+                    <div v-else-if="data.item.eventType == EVENT_APPROVALFORALL">
                       {{ data.item.approved }}
                     </div>
                   </template>
@@ -427,7 +427,7 @@
 
               <!-- Tokens: -->
               <div v-if="settings.tableIndex == 1">
-                <b-table small fixed striped :fields="contract.type == 20 ? tokensFieldsFungible : tokensFieldsNonFungible" :items="pagedSortedFilteredTokens" show-empty empty-html="Click [Retrieve] above" head-variant="light" class="mt-1">
+                <b-table small fixed striped :fields="contract.contractType == 20 ? tokensFieldsFungible : tokensFieldsNonFungible" :items="pagedSortedFilteredTokens" show-empty empty-html="Click [Retrieve] above" head-variant="light" class="mt-1">
                   <template #cell(number)="data">
                       <font size="-1" class="text-muted">{{ parseInt(data.index) + ((settings.tokensTable.currentPage - 1) * settings.tokensTable.pageSize) + 1 }}</font>
                   </template>
@@ -442,8 +442,8 @@
                         </span>
                       </font>
                     </b-link>
-                    <font size="-1" v-b-popover.hover.ds500="'logIndex'" class="text-muted">{{ data.item.logIndex }}</font>
-                    <font size="-1" v-b-popover.hover.ds500="'txHash'" class="text-muted">{{ data.item.txHash.substring(0, 8) + '...' + data.item.txHash.slice(-6) }}</font>
+                    <font size="-2" v-b-popover.hover.ds500="'logIndex'" class="text-muted">{{ data.item.logIndex }}</font>
+                    <font size="-2" v-b-popover.hover.ds500="'txHash'" class="text-muted">{{ data.item.txHash.substring(0, 8) + '...' + data.item.txHash.slice(-6) }}</font>
                   </template>
                   <template #cell(owner)="data">
                     <b-link size="sm" :href="explorer + 'token/' + settings.contract + '?a=' + data.item.owner" variant="link" v-b-popover.hover.ds500="data.item.owner" target="_blank">
@@ -451,7 +451,7 @@
                     </b-link>
                   </template>
                   <template #head(owners)="data">
-                    {{ contract.type == 721 ? "Owner" : "Owner(s)" }}
+                    {{ contract.contractType == 721 ? "Owner" : "Owner(s)" }}
                   </template>
                   <template #cell(owners)="data">
                     <b-link size="sm" :href="explorer + 'token/' + settings.contract + '?a=' + data.item.owner" variant="link" v-b-popover.hover.ds500="data.item.owner" target="_blank">
@@ -459,14 +459,14 @@
                     </b-link>
                   </template>
                   <template #cell(tokens)="data">
-                    <div v-if="contract.type == 20">
+                    <div v-if="contract.contractType == 20">
                       <font size="-2" class="text-muted">
                         {{ formatNumber(data.item.tokens) }}
                       </font>
                       {{ formatDecimals(data.item.tokens, contract.decimals) }}
                     </div>
-                    <div v-else-if="contract.type == 721 || contract.type == 1155">
-                      <b-badge v-if="data.item.tokenId" pill @click="viewNonFungible(contract.type, contract.contract, data.item.tokenId)" v-b-popover.hover.ds500="'Click to view token'" variant="info">
+                    <div v-else-if="contract.contractType == 721 || contract.contractType == 1155">
+                      <b-badge v-if="data.item.tokenId" pill @click="viewNonFungible(contract.contractType, contract.contract, data.item.tokenId)" v-b-popover.hover.ds500="'Click to view token'" variant="info">
                         {{ data.item.tokenId }}
                       </b-badge>
                     </div>
@@ -490,8 +490,8 @@
                           {{ data.item.blockNumber + ':' + data.item.txIndex }}
                         </span>
                       </b-link>
-                      <font size="-1" v-b-popover.hover.ds500="'logIndex'" class="text-muted">{{ data.item.logIndex }}</font>
-                      <font size="-1" v-b-popover.hover.ds500="'txHash'" class="text-muted">{{ data.item.txHash.substring(0, 8) + '...' + data.item.txHash.slice(-6) }}</font>
+                      <font size="-2" v-b-popover.hover.ds500="'logIndex'" class="text-muted">{{ data.item.logIndex }}</font>
+                      <font size="-2" v-b-popover.hover.ds500="'txHash'" class="text-muted">{{ data.item.txHash.substring(0, 8) + '...' + data.item.txHash.slice(-6) }}</font>
                     </font>
                   </template>
                   <template #cell(owner)="data">
@@ -505,10 +505,10 @@
                     </b-link>
                   </template>
                   <template #head(tokens)="data">
-                    {{ contract.type == 721 ? "Token Id" : "Tokens" }}
+                    {{ contract.contractType == 721 ? "Token Id" : "Tokens" }}
                   </template>
                   <template #cell(tokens)="data">
-                    <div v-if="contract.type == 20">
+                    <div v-if="contract.contractType == 20">
                       <font size="-2" class="text-muted">
                         {{ formatNumber(data.item.tokens) }}
                       </font>
@@ -521,8 +521,8 @@
                         </span>
                       </b-link>
                     </div>
-                    <div v-if="contract.type == 721">
-                      <b-badge v-if="data.item.tokenId" pill @click="viewNonFungible(contract.type, contract.contract, data.item.tokenId)" v-b-popover.hover.ds500="'Click to view token'" variant="info">
+                    <div v-if="contract.contractType == 721">
+                      <b-badge v-if="data.item.tokenId" pill @click="viewNonFungible(contract.contractType, contract.contract, data.item.tokenId)" v-b-popover.hover.ds500="'Click to view token'" variant="info">
                         {{ data.item.tokenId }}
                       </b-badge>
                     </div>
@@ -547,8 +547,8 @@
                           {{ data.item.blockNumber + ':' + data.item.txIndex }}
                         </span>
                       </b-link>
-                      <font size="-1" v-b-popover.hover.ds500="'logIndex'" class="text-muted">{{ data.item.logIndex }}</font>
-                      <font size="-1" v-b-popover.hover.ds500="'txHash'" class="text-muted">{{ data.item.txHash.substring(0, 8) + '...' + data.item.txHash.slice(-6) }}</font>
+                      <font size="-2" v-b-popover.hover.ds500="'logIndex'" class="text-muted">{{ data.item.logIndex }}</font>
+                      <font size="-2" v-b-popover.hover.ds500="'txHash'" class="text-muted">{{ data.item.txHash.substring(0, 8) + '...' + data.item.txHash.slice(-6) }}</font>
                     </font>
                   </template>
                   <template #cell(owner)="data">
@@ -865,11 +865,13 @@
           contract: {
             chainId: null,
             contract: null,
-            type: null,
+            contractType: null,
             symbol: null,
             name: null,
             decimals: null,
             totalSupply: null,
+            blockNumber: null,
+            timestamp: null,
           },
 
           events: [],
@@ -976,10 +978,9 @@
             { value: 25, text: '25' },
             { value: 50, text: '50' },
             { value: 100, text: '100' },
+            { value: 250, text: '250' },
             { value: 500, text: '500' },
             { value: 1000, text: '1k' },
-            { value: 2500, text: '2.5k' },
-            { value: 10000, text: '10k' },
           ],
 
           eventsFields: [
@@ -1086,7 +1087,7 @@
             for (const item of this.events) {
               const metadata = tokensMetadata[item.tokenId] || null;
               let metadatas = null;
-              if (item.type == EVENT_TRANSFERBATCH) {
+              if (item.eventType == EVENT_TRANSFERBATCH) {
                 metadatas = [];
                 for (const [index, tokenId] of item.tokenIds.entries()) {
                   metadatas.push({
@@ -1100,39 +1101,37 @@
               }
               let include = true;
               if (addressRegex) {
-                if (item.type == EVENT_TRANSFER) {
+                if (item.eventType == EVENT_TRANSFER) {
                   if (!(addressRegex.test(item.from) || addressRegex.test(item.to) || addressRegex.test(item.txHash) || addressRegex.test(item.blockNumber.toString()))) {
                     include = false;
                   }
-                } else if (item.type == EVENT_TRANSFERSINGLE) {
+                } else if (item.eventType == EVENT_TRANSFERSINGLE) {
                   if (!(addressRegex.test(item.from) || addressRegex.test(item.to) || addressRegex.test(item.txHash) || addressRegex.test(item.blockNumber.toString()) || addressRegex.test(item.tokenId.toString()))) {
                     include = false;
                   }
-                } else if (item.type == EVENT_TRANSFERBATCH) {
+                } else if (item.eventType == EVENT_TRANSFERBATCH) {
                   if (!(addressRegex.test(item.from) || addressRegex.test(item.to) || addressRegex.test(item.txHash) || addressRegex.test(item.blockNumber.toString()))) {
                     include = false;
                   }
-                } else if (item.type == EVENT_APPROVAL) {
+                } else if (item.eventType == EVENT_APPROVAL) {
                   if (!(addressRegex.test(item.owner) || addressRegex.test(item.spender) || addressRegex.test(item.txHash) || addressRegex.test(item.blockNumber))) {
                     include = false;
                   }
-                } else if (item.type == EVENT_APPROVALFORALL) {
+                } else if (item.eventType == EVENT_APPROVALFORALL) {
                   if (!(addressRegex.test(item.owner) || addressRegex.test(item.operator) || addressRegex.test(item.txHash) || addressRegex.test(item.blockNumber))) {
                     include = false;
                   }
                 }
               }
-              if (include && tokenIdRegex && (this.type == 721 || this.type == 1155)) {
-                if (this.type == 721 || (this.type == 1155 && item.type == EVENT_TRANSFERSINGLE)) {
+              if (include && tokenIdRegex && (item.contractType == 721 || item.contractType == 1155)) {
+                if (item.contractType == 721 || (item.contractType == 1155 && item.eventType == EVENT_TRANSFERSINGLE)) {
                   if (!(tokenIdRegex.test(item.tokenId))) {
                     include = false;
                   }
-                } else if (this.type == 1155 && item.type == EVENT_TRANSFERBATCH) {
+                } else if (item.contractType == 1155 && item.eventType == EVENT_TRANSFERBATCH) {
                   let found = false;
                   for (const [index, tokenId] of item.tokenIds.entries()) {
-                    // console.log(index + " " + tokenId);
                     if (tokenIdRegex.test(tokenId)) {
-                      // console.log("FOUND: " + JSON.stringify(item.tokenIds));
                       found = true;
                       break;
                     }
@@ -1202,7 +1201,7 @@
                   include = false;
                 }
               }
-              if (include && tokenIdRegex && (this.type == 721 || this.type == 1155)) {
+              if (include && tokenIdRegex && (item.contractType == 721 || item.contractType == 1155)) {
                 if (!(tokenIdRegex.test(item.tokenId))) {
                   include = false;
                 }
@@ -1217,7 +1216,7 @@
                 results.push(item);
               }
             }
-            if (this.type == 20) {
+            if (this.contract.contractType == 20) {
               if (this.settings.tokensTable.sortOptionERC20 == "txorderasc") {
                 results.sort((a, b) => {
                   if (a.blockNumber == b.blockNumber) {
@@ -1251,7 +1250,7 @@
                   return b.tokens - a.tokens;
                 });
               }
-            } else if (this.type == 721) {
+            } else if (this.contract.contractType == 721) {
               if (this.settings.tokensTable.sortOptionERC721 == "txorderasc") {
                 results.sort((a, b) => {
                   if (a.blockNumber == b.blockNumber) {
@@ -1285,7 +1284,7 @@
                   return ('' + b.owner).localeCompare(a.owner);
                 });
               }
-            } else if (this.type == 1155) {
+            } else if (this.contract.contractType == 1155) {
               if (this.settings.tokensTable.sortOptionERC1155 == "txorderasc") {
                 results.sort((a, b) => {
                   if (a.blockNumber == b.blockNumber) {
@@ -1353,7 +1352,7 @@
                   include = false;
                 }
               }
-              if (include && tokenIdRegex && this.type == 721) {
+              if (include && tokenIdRegex && this.contract.contractType == 721) {
                 if (!(tokenIdRegex.test(item.tokenId))) {
                   include = false;
                 }
@@ -1401,21 +1400,21 @@
                 return ('' + b.spender).localeCompare(a.spender);
               });
             } else if (this.settings.approvalsTable.sortOption == "tokensasc") {
-              if (this.type == 20) {
+              if (this.contract.contractType == 20) {
                 results.sort((a, b) => {
                   return a.tokens - b.tokens;
                 });
-              } else if (this.type == 721) {
+              } else if (this.contract.contractType == 721) {
                 results.sort((a, b) => {
                   return a.tokenId - b.tokenId;
                 });
               }
             } else if (this.settings.approvalsTable.sortOption == "tokensdsc") {
-              if (this.type == 20) {
+              if (this.contract.contractType == 20) {
                 results.sort((a, b) => {
                   return b.tokens - a.tokens;
                 });
-              } else if (this.type == 721) {
+              } else if (this.contract.contractType == 721) {
                 results.sort((a, b) => {
                   return b.tokenId - a.tokenId;
                 });
@@ -1645,65 +1644,57 @@
             const timestamp = parseInt(block.timestamp);
 
             let [ supportsERC721, supportsERC1155 ] = [ false, false ];
-            [ this.type, this.symbol, this.name, this.decimals, this.totalSupply, this.description ] = [ null, null, null, null, null, null ];
+            let [ contractType, symbol, name, decimals, totalSupply ] = [ null, null, null, null, null ];
             try {
               supportsERC721 = await erc165.supportsInterface(ERC721_INTERFACE);
             } catch (e) {
             }
             if (supportsERC721) {
-              this.type = 721;
+              contractType = 721;
               try {
-                this.symbol = await erc721.symbol();
+                symbol = await erc721.symbol();
               } catch (e) {
               }
             } else {
               try {
                 supportsERC1155 = await erc165.supportsInterface(ERC1155_INTERFACE);
                 if (supportsERC1155) {
-                  this.type = 1155;
+                  contractType = 1155;
                 }
               } catch (e) {
               }
             }
-            if (!this.type) {
+            if (!contractType) {
               try {
-                this.decimals = parseInt(await erc20.decimals());
+                decimals = parseInt(await erc20.decimals());
               } catch (e) {
               }
               try {
-                this.totalSupply = (await erc20.totalSupply()).toString();
+                totalSupply = (await erc20.totalSupply()).toString();
               } catch (e) {
               }
-              if (this.decimals != null && this.totalSupply) {
-                this.type = 20;
+              if (decimals != null && totalSupply) {
+                contractType = 20;
                 try {
-                  this.symbol = await erc20.symbol();
+                  symbol = await erc20.symbol();
                 } catch (e) {
                 }
                 try {
-                  this.name = await erc20.name();
+                  name = await erc20.name();
                 } catch (e) {
                 }
               }
             }
-            // if (this.type == 20) {
-            //   this.description = "ERC-20 " + this.symbol + " " + this.name + " " + this.decimals + " " + this.formatDecimals(this.totalSupply, this.decimals);
-            // } else if (this.type == 721) {
-            //   this.description = "ERC-721 " + this.symbol;
-            // } else if (this.type == 1155) {
-            //   this.description = "ERC-1155";
-            // } else {
-            //   this.description = "Not a token contract";
-            // }
-            // console.log(now() + " retrieveEvents - this.description: " + this.description);
             const contract = {
               chainId: this.chainId,
               contract: contractAddress,
-              type: this.type,
-              symbol: this.symbol,
-              name: this.name,
-              decimals: this.decimals,
-              totalSupply: this.totalSupply,
+              contractType,
+              symbol,
+              name,
+              decimals,
+              totalSupply,
+              blockNumber: latestBlockNumber,
+              timestamp,
             };
             Vue.set(this, 'contract', contract);
             console.log(now() + " retrieveEvents - this.contract: " + JSON.stringify(this.contract));
@@ -1749,7 +1740,7 @@
                 const eventLogs = await provider.getLogs(filter);
                 t.sync.completed = toBlock;
                 t.sync.records += eventLogs.length;
-                const records = parseEventLogs(eventLogs, t.type, t.chainId, latestBlockNumber);
+                const records = parseEventLogs(eventLogs, t.contract.contractType, t.chainId, latestBlockNumber);
                 if (records.length) {
                   await db.events.bulkPut(records).then(function(lastKey) {
                     console.log(now() + " INFO retrieveEvents - bulkPut.lastKey: " + JSON.stringify(lastKey));
@@ -1822,11 +1813,11 @@
             //   done = data.length < this.DB_PROCESSING_BATCH_SIZE;
             // } while (!done);
             if (contract) {
-              if (contract.type == 20) {
+              if (contract.contractType == 20) {
                 this.loadERC20(contract);
-              } else if (contract.type == 721) {
+              } else if (contract.contractType == 721) {
                 this.loadERC721(contract);
-              } else if (contract.type == 1155) {
+              } else if (contract.contractType == 1155) {
                 this.loadERC1155(contract);
               }
             }
@@ -1899,9 +1890,9 @@
               done = records.length < this.DB_PROCESSING_BATCH_SIZE;
             } while (!done);
             Vue.set(this, 'events', events);
-            console.log(now() + " INFO loadERC20 - events[0..2]: " + JSON.stringify(events.slice(0, 3), null, 2));
-            console.log(now() + " INFO loadERC20 - tokensCollator: " + JSON.stringify(tokensCollator, null, 2));
-            console.log(now() + " INFO loadERC20 - approvalsCollator: " + JSON.stringify(approvalsCollator, null, 2));
+            // console.log(now() + " INFO loadERC20 - events[0..2]: " + JSON.stringify(events.slice(0, 3), null, 2));
+            // console.log(now() + " INFO loadERC20 - tokensCollator: " + JSON.stringify(tokensCollator, null, 2));
+            // console.log(now() + " INFO loadERC20 - approvalsCollator: " + JSON.stringify(approvalsCollator, null, 2));
             const tokens = [];
             for (const [ owner, balance ] of Object.entries(tokensCollator)) {
               tokens.push({ owner, ...balance });
@@ -1931,9 +1922,8 @@
               const records = await db.events.where("contract").equals(contractData.contract).offset(rows).limit(this.DB_PROCESSING_BATCH_SIZE).toArray();
               console.log(now() + " INFO loadERC721 - records.length: " + records.length + ", first[0..9]: " + JSON.stringify(records.slice(0, 10).map(e => e.blockNumber + '.' + e.logIndex )));
               for (const event of records) {
-                // console.log(now() + " INFO loadERC721 - event: " + JSON.stringify(event));
                 events.push(event);
-                if (event.type == EVENT_TRANSFER) {
+                if (event.eventType == EVENT_TRANSFER) {
                   tokensCollator[event.tokenId] = {
                     blockNumber: event.blockNumber,
                     txIndex: event.txIndex,
@@ -1941,7 +1931,7 @@
                     logIndex: event.logIndex,
                     owner: event.to,
                   };
-                } else if (event.type == EVENT_APPROVAL) {
+                } else if (event.eventType == EVENT_APPROVAL) {
                   approvalsCollator[event.tokenId] = {
                     blockNumber: event.blockNumber,
                     txIndex: event.txIndex,
@@ -1950,7 +1940,7 @@
                     owner: event.owner,
                     spender: event.spender,
                   };
-                } else if (event.type == EVENT_APPROVALFORALL) {
+                } else if (event.eventType == EVENT_APPROVALFORALL) {
                   if (!(event.owner in approvalForAllsCollator)) {
                     approvalForAllsCollator[event.owner] = {};
                   }
@@ -1970,10 +1960,10 @@
               done = records.length < this.DB_PROCESSING_BATCH_SIZE;
             } while (!done);
             Vue.set(this, 'events', events);
-            console.log(now() + " INFO loadERC721 - events[0..2]: " + JSON.stringify(events.slice(0, 3), null, 2));
-            console.log(now() + " INFO collateERC721 - tokensCollator: " + JSON.stringify(tokensCollator, null, 2));
-            console.log(now() + " INFO collateERC721 - approvalForAllsCollator: " + JSON.stringify(approvalForAllsCollator, null, 2));
-            console.log(now() + " INFO collateERC721 - approvalsCollator: " + JSON.stringify(approvalsCollator, null, 2));
+            // console.log(now() + " INFO loadERC721 - events[0..2]: " + JSON.stringify(events.slice(0, 3), null, 2));
+            // console.log(now() + " INFO collateERC721 - tokensCollator: " + JSON.stringify(tokensCollator, null, 2));
+            // console.log(now() + " INFO collateERC721 - approvalForAllsCollator: " + JSON.stringify(approvalForAllsCollator, null, 2));
+            // console.log(now() + " INFO collateERC721 - approvalsCollator: " + JSON.stringify(approvalsCollator, null, 2));
             const tokens = [];
             for (const [ tokenId, tokenData ] of Object.entries(tokensCollator)) {
               tokens.push({ tokenId, ...tokenData });
@@ -2008,7 +1998,7 @@
               for (const event of records) {
                 // console.log(now() + " INFO loadERC1155 - event: " + JSON.stringify(event));
                 events.push(event);
-                if (event.type == EVENT_TRANSFERSINGLE) {
+                if (event.eventType == EVENT_TRANSFERSINGLE) {
                   if (!(event.tokenId in tokensCollator)) {
                     tokensCollator[event.tokenId] = {};
                   }
@@ -2044,7 +2034,7 @@
                     tokensCollator[event.tokenId][event.to].logIndex = event.logIndex;
                     tokensCollator[event.tokenId][event.to].value = ethers.BigNumber.from(tokensCollator[event.tokenId][event.to].value).add(event.value).toString();
                   }
-                } else if (event.type == EVENT_TRANSFERBATCH) {
+                } else if (event.eventType == EVENT_TRANSFERBATCH) {
                   for (let i = 0; i < event.tokenIds.length; i++) {
                     if (!(event.tokenIds[i] in tokensCollator)) {
                       tokensCollator[event.tokenIds[i]] = {};
@@ -2068,7 +2058,7 @@
                     }
 
                   }
-                } else if (event.type == EVENT_APPROVALFORALL) {
+                } else if (event.eventType == EVENT_APPROVALFORALL) {
                   if (!(event.owner in approvalForAllsCollator)) {
                     approvalForAllsCollator[event.owner] = {};
                   }
@@ -2088,233 +2078,7 @@
               done = records.length < this.DB_PROCESSING_BATCH_SIZE;
             } while (!done);
             Vue.set(this, 'events', events);
-            console.log(now() + " INFO loadERC1155 - events[0..2]: " + JSON.stringify(events.slice(0, 3), null, 2));
-            console.log(now() + " INFO collateERC1155 - tokensCollator: " + JSON.stringify(tokensCollator, null, 2));
-            console.log(now() + " INFO collateERC1155 - approvalForAllsCollator: " + JSON.stringify(approvalForAllsCollator, null, 2));
-            const tokens = [];
-            for (const [ tokenId, tokenData ] of Object.entries(tokensCollator)) {
-              for (const [ owner, ownerData ] of Object.entries(tokenData)) {
-                tokens.push({ tokenId, owner, ...ownerData });
-              }
-            }
-            Vue.set(this, 'tokens', tokens);
-            const approvalForAlls = [];
-            for (const [ owner, ownerData ] of Object.entries(approvalForAllsCollator)) {
-              for (const [ operator, operatorData ] of Object.entries(ownerData)) {
-                approvalForAlls.push({ owner, operator, ...operatorData });
-              }
-            }
-            Vue.set(this, 'approvalForAlls', approvalForAlls);
-            Vue.set(this, 'approvals', []);
-          },
-
-          async collateERC20() {
-            console.log(now() + " INFO collateERC20");
-            const tokensCollator = {};
-            const approvalsCollator = {};
-            for (const event of this.events) {
-              if (event.type == EVENT_TRANSFER) {
-                if (!(event.from in tokensCollator)) {
-                  tokensCollator[event.from] = {
-                    blockNumber: event.blockNumber,
-                    txIndex: event.txIndex,
-                    txHash: event.txHash,
-                    logIndex: event.logIndex,
-                    tokens: event.from == ADDRESS0 ? "0" : ethers.BigNumber.from(0).sub(event.tokens).toString(),
-                  };
-                } else {
-                  tokensCollator[event.from].blockNumber = event.blockNumber;
-                  tokensCollator[event.from].txIndex = event.txIndex;
-                  tokensCollator[event.from].txHash = event.txHash;
-                  tokensCollator[event.from].logIndex = event.logIndex;
-                  tokensCollator[event.from].blockNumber = event.blockNumber;
-                  if (event.from != ADDRESS0) {
-                    tokensCollator[event.from].tokens = ethers.BigNumber.from(tokensCollator[event.from].tokens).sub(event.tokens).toString();
-                  }
-                }
-                if (!(event.to in tokensCollator)) {
-                  tokensCollator[event.to] = {
-                    blockNumber: event.blockNumber,
-                    txIndex: event.txIndex,
-                    txHash: event.txHash,
-                    logIndex: event.logIndex,
-                    tokens: event.tokens,
-                  };
-                } else {
-                  tokensCollator[event.to].blockNumber = event.blockNumber;
-                  tokensCollator[event.to].txIndex = event.txIndex;
-                  tokensCollator[event.to].txHash = event.txHash;
-                  tokensCollator[event.to].logIndex = event.logIndex;
-                  tokensCollator[event.to].tokens = ethers.BigNumber.from(tokensCollator[event.to].tokens).add(event.tokens).toString();
-                }
-              } else if (event.type == EVENT_APPROVAL) {
-                if (!(event.owner in approvalsCollator)) {
-                  approvalsCollator[event.owner] = {};
-                }
-                approvalsCollator[event.owner][event.spender] = {
-                  blockNumber: event.blockNumber,
-                  txIndex: event.txIndex,
-                  txHash: event.txHash,
-                  logIndex: event.logIndex,
-                  tokens: event.tokens,
-                };
-              }
-            }
-            // console.log(now() + " INFO collateERC20 - tokensCollator: " + JSON.stringify(tokensCollator, null, 2));
-            // console.log(now() + " INFO collateERC20 - approvalsCollator: " + JSON.stringify(approvalsCollator, null, 2));
-            const tokens = [];
-            for (const [ owner, balance ] of Object.entries(tokensCollator)) {
-              tokens.push({ owner, ...balance });
-            }
-            Vue.set(this, 'tokens', tokens);
-            const approvals = [];
-            for (const [ owner, spenders ] of Object.entries(approvalsCollator)) {
-              for (const [spender, tokens] of Object.entries(spenders)) {
-                approvals.push({ owner, spender, ...tokens });
-              }
-            }
-            Vue.set(this, 'approvals', approvals);
-            Vue.set(this, 'approvalForAlls', []);
-          },
-          async collateERC721() {
-            console.log(now() + " INFO collateERC721");
-            const tokensCollator = {};
-            const approvalForAllsCollator = {};
-            const approvalsCollator = {};
-            for (const event of this.events) {
-              if (event.type == EVENT_TRANSFER) {
-                tokensCollator[event.tokenId] = {
-                  blockNumber: event.blockNumber,
-                  txIndex: event.txIndex,
-                  txHash: event.txHash,
-                  logIndex: event.logIndex,
-                  owner: event.to,
-                };
-              } else if (event.type == EVENT_APPROVAL) {
-                approvalsCollator[event.tokenId] = {
-                  blockNumber: event.blockNumber,
-                  txIndex: event.txIndex,
-                  txHash: event.txHash,
-                  logIndex: event.logIndex,
-                  owner: event.owner,
-                  spender: event.spender,
-                };
-              } else if (event.type == EVENT_APPROVALFORALL) {
-                if (!(event.owner in approvalForAllsCollator)) {
-                  approvalForAllsCollator[event.owner] = {};
-                }
-                approvalForAllsCollator[event.owner][event.operator] = {
-                  blockNumber: event.blockNumber,
-                  txIndex: event.txIndex,
-                  txHash: event.txHash,
-                  logIndex: event.logIndex,
-                  approved: event.approved,
-                };
-              } else {
-                console.log(now() + " INFO collateERC721 - ELSE event: " + JSON.stringify(event));
-              }
-            }
-            // console.log(now() + " INFO collateERC721 - tokensCollator: " + JSON.stringify(tokensCollator, null, 2));
-            // console.log(now() + " INFO collateERC721 - approvalForAllsCollator: " + JSON.stringify(approvalForAllsCollator, null, 2));
-            // console.log(now() + " INFO collateERC721 - approvalsCollator: " + JSON.stringify(approvalsCollator, null, 2));
-            const tokens = [];
-            for (const [ tokenId, tokenData ] of Object.entries(tokensCollator)) {
-              tokens.push({ tokenId, ...tokenData });
-            }
-            Vue.set(this, 'tokens', tokens);
-            const approvalForAlls = [];
-            for (const [ owner, ownerData ] of Object.entries(approvalForAllsCollator)) {
-              for (const [ operator, operatorData ] of Object.entries(ownerData)) {
-                approvalForAlls.push({ owner, operator, ...operatorData });
-              }
-            }
-            Vue.set(this, 'approvalForAlls', approvalForAlls);
-            const approvals = [];
-            for (const [ tokenId, tokenData ] of Object.entries(approvalsCollator)) {
-              approvals.push({ tokenId, ...tokenData });
-            }
-            Vue.set(this, 'approvals', approvals);
-          },
-          async collateERC1155() {
-            console.log(now() + " INFO collateERC1155");
-            const tokensCollator = {};
-            const approvalForAllsCollator = {};
-            for (const event of this.events) {
-              if (event.type == EVENT_TRANSFERSINGLE) {
-                if (!(event.tokenId in tokensCollator)) {
-                  tokensCollator[event.tokenId] = {};
-                }
-                if (!(event.from in tokensCollator[event.tokenId])) {
-                  tokensCollator[event.tokenId][event.from] = {
-                    blockNumber: event.blockNumber,
-                    txIndex: event.txIndex,
-                    txHash: event.txHash,
-                    logIndex: event.logIndex,
-                    value: event.from == ADDRESS0 ? "0" : ethers.BigNumber.from(0).sub(event.value).toString(),
-                  };
-                } else {
-                  tokensCollator[event.tokenId][event.from].blockNumber = event.blockNumber;
-                  tokensCollator[event.tokenId][event.from].txIndex = event.txIndex;
-                  tokensCollator[event.tokenId][event.from].txHash = event.txHash;
-                  tokensCollator[event.tokenId][event.from].logIndex = event.logIndex;
-                  if (event.from != ADDRESS0) {
-                    tokensCollator[event.tokenId][event.from].value = ethers.BigNumber.from(tokensCollator[event.tokenId][event.from].value).add(event.value).toString();
-                  }
-                }
-                if (!(event.to in tokensCollator[event.tokenId])) {
-                  tokensCollator[event.tokenId][event.to] = {
-                    blockNumber: event.blockNumber,
-                    txIndex: event.txIndex,
-                    txHash: event.txHash,
-                    logIndex: event.logIndex,
-                    value: event.value,
-                  };
-                } else {
-                  tokensCollator[event.tokenId][event.to].blockNumber = event.blockNumber;
-                  tokensCollator[event.tokenId][event.to].txIndex = event.txIndex;
-                  tokensCollator[event.tokenId][event.to].txHash = event.txHash;
-                  tokensCollator[event.tokenId][event.to].logIndex = event.logIndex;
-                  tokensCollator[event.tokenId][event.to].value = ethers.BigNumber.from(tokensCollator[event.tokenId][event.to].value).add(event.value).toString();
-                }
-              } else if (event.type == EVENT_TRANSFERBATCH) {
-                for (let i = 0; i < event.tokenIds.length; i++) {
-                  if (!(event.tokenIds[i] in tokensCollator)) {
-                    tokensCollator[event.tokenIds[i]] = {};
-                  }
-                  if (!(event.from in tokensCollator[event.tokenIds[i]])) {
-                    tokensCollator[event.tokenIds[i]][event.from] = {
-                      blockNumber: event.blockNumber,
-                      txIndex: event.txIndex,
-                      txHash: event.txHash,
-                      logIndex: event.logIndex,
-                      value: event.from == ADDRESS0 ? "0" : ethers.BigNumber.from(0).sub(event.values[i]).toString(),
-                    };
-                  } else {
-                    tokensCollator[event.tokenIds[i]][event.from].blockNumber = event.blockNumber;
-                    tokensCollator[event.tokenIds[i]][event.from].txIndex = event.txIndex;
-                    tokensCollator[event.tokenIds[i]][event.from].txHash = event.txHash;
-                    tokensCollator[event.tokenIds[i]][event.from].logIndex = event.logIndex;
-                    if (event.from != ADDRESS0) {
-                      tokensCollator[event.tokenIds[i]][event.from].value = ethers.BigNumber.from(tokensCollator[event.tokenIds[i]][event.from].value).add(event.values[i]).toString();
-                    }
-                  }
-
-                }
-              } else if (event.type == EVENT_APPROVALFORALL) {
-                if (!(event.owner in approvalForAllsCollator)) {
-                  approvalForAllsCollator[event.owner] = {};
-                }
-                approvalForAllsCollator[event.owner][event.operator] = {
-                  blockNumber: event.blockNumber,
-                  txIndex: event.txIndex,
-                  txHash: event.txHash,
-                  logIndex: event.logIndex,
-                  approved: event.approved,
-                };
-              } else {
-                console.log(now() + " INFO collateERC1155 - ELSE event: " + JSON.stringify(event));
-              }
-            }
+            // console.log(now() + " INFO loadERC1155 - events[0..2]: " + JSON.stringify(events.slice(0, 3), null, 2));
             // console.log(now() + " INFO collateERC1155 - tokensCollator: " + JSON.stringify(tokensCollator, null, 2));
             // console.log(now() + " INFO collateERC1155 - approvalForAllsCollator: " + JSON.stringify(approvalForAllsCollator, null, 2));
             const tokens = [];
@@ -2333,6 +2097,232 @@
             Vue.set(this, 'approvalForAlls', approvalForAlls);
             Vue.set(this, 'approvals', []);
           },
+
+          // async collateERC20() {
+          //   console.log(now() + " INFO collateERC20");
+          //   const tokensCollator = {};
+          //   const approvalsCollator = {};
+          //   for (const event of this.events) {
+          //     if (event.type == EVENT_TRANSFER) {
+          //       if (!(event.from in tokensCollator)) {
+          //         tokensCollator[event.from] = {
+          //           blockNumber: event.blockNumber,
+          //           txIndex: event.txIndex,
+          //           txHash: event.txHash,
+          //           logIndex: event.logIndex,
+          //           tokens: event.from == ADDRESS0 ? "0" : ethers.BigNumber.from(0).sub(event.tokens).toString(),
+          //         };
+          //       } else {
+          //         tokensCollator[event.from].blockNumber = event.blockNumber;
+          //         tokensCollator[event.from].txIndex = event.txIndex;
+          //         tokensCollator[event.from].txHash = event.txHash;
+          //         tokensCollator[event.from].logIndex = event.logIndex;
+          //         tokensCollator[event.from].blockNumber = event.blockNumber;
+          //         if (event.from != ADDRESS0) {
+          //           tokensCollator[event.from].tokens = ethers.BigNumber.from(tokensCollator[event.from].tokens).sub(event.tokens).toString();
+          //         }
+          //       }
+          //       if (!(event.to in tokensCollator)) {
+          //         tokensCollator[event.to] = {
+          //           blockNumber: event.blockNumber,
+          //           txIndex: event.txIndex,
+          //           txHash: event.txHash,
+          //           logIndex: event.logIndex,
+          //           tokens: event.tokens,
+          //         };
+          //       } else {
+          //         tokensCollator[event.to].blockNumber = event.blockNumber;
+          //         tokensCollator[event.to].txIndex = event.txIndex;
+          //         tokensCollator[event.to].txHash = event.txHash;
+          //         tokensCollator[event.to].logIndex = event.logIndex;
+          //         tokensCollator[event.to].tokens = ethers.BigNumber.from(tokensCollator[event.to].tokens).add(event.tokens).toString();
+          //       }
+          //     } else if (event.type == EVENT_APPROVAL) {
+          //       if (!(event.owner in approvalsCollator)) {
+          //         approvalsCollator[event.owner] = {};
+          //       }
+          //       approvalsCollator[event.owner][event.spender] = {
+          //         blockNumber: event.blockNumber,
+          //         txIndex: event.txIndex,
+          //         txHash: event.txHash,
+          //         logIndex: event.logIndex,
+          //         tokens: event.tokens,
+          //       };
+          //     }
+          //   }
+          //   // console.log(now() + " INFO collateERC20 - tokensCollator: " + JSON.stringify(tokensCollator, null, 2));
+          //   // console.log(now() + " INFO collateERC20 - approvalsCollator: " + JSON.stringify(approvalsCollator, null, 2));
+          //   const tokens = [];
+          //   for (const [ owner, balance ] of Object.entries(tokensCollator)) {
+          //     tokens.push({ owner, ...balance });
+          //   }
+          //   Vue.set(this, 'tokens', tokens);
+          //   const approvals = [];
+          //   for (const [ owner, spenders ] of Object.entries(approvalsCollator)) {
+          //     for (const [spender, tokens] of Object.entries(spenders)) {
+          //       approvals.push({ owner, spender, ...tokens });
+          //     }
+          //   }
+          //   Vue.set(this, 'approvals', approvals);
+          //   Vue.set(this, 'approvalForAlls', []);
+          // },
+          // async collateERC721() {
+          //   console.log(now() + " INFO collateERC721");
+          //   const tokensCollator = {};
+          //   const approvalForAllsCollator = {};
+          //   const approvalsCollator = {};
+          //   for (const event of this.events) {
+          //     if (event.type == EVENT_TRANSFER) {
+          //       tokensCollator[event.tokenId] = {
+          //         blockNumber: event.blockNumber,
+          //         txIndex: event.txIndex,
+          //         txHash: event.txHash,
+          //         logIndex: event.logIndex,
+          //         owner: event.to,
+          //       };
+          //     } else if (event.type == EVENT_APPROVAL) {
+          //       approvalsCollator[event.tokenId] = {
+          //         blockNumber: event.blockNumber,
+          //         txIndex: event.txIndex,
+          //         txHash: event.txHash,
+          //         logIndex: event.logIndex,
+          //         owner: event.owner,
+          //         spender: event.spender,
+          //       };
+          //     } else if (event.type == EVENT_APPROVALFORALL) {
+          //       if (!(event.owner in approvalForAllsCollator)) {
+          //         approvalForAllsCollator[event.owner] = {};
+          //       }
+          //       approvalForAllsCollator[event.owner][event.operator] = {
+          //         blockNumber: event.blockNumber,
+          //         txIndex: event.txIndex,
+          //         txHash: event.txHash,
+          //         logIndex: event.logIndex,
+          //         approved: event.approved,
+          //       };
+          //     } else {
+          //       console.log(now() + " INFO collateERC721 - ELSE event: " + JSON.stringify(event));
+          //     }
+          //   }
+          //   // console.log(now() + " INFO collateERC721 - tokensCollator: " + JSON.stringify(tokensCollator, null, 2));
+          //   // console.log(now() + " INFO collateERC721 - approvalForAllsCollator: " + JSON.stringify(approvalForAllsCollator, null, 2));
+          //   // console.log(now() + " INFO collateERC721 - approvalsCollator: " + JSON.stringify(approvalsCollator, null, 2));
+          //   const tokens = [];
+          //   for (const [ tokenId, tokenData ] of Object.entries(tokensCollator)) {
+          //     tokens.push({ tokenId, ...tokenData });
+          //   }
+          //   Vue.set(this, 'tokens', tokens);
+          //   const approvalForAlls = [];
+          //   for (const [ owner, ownerData ] of Object.entries(approvalForAllsCollator)) {
+          //     for (const [ operator, operatorData ] of Object.entries(ownerData)) {
+          //       approvalForAlls.push({ owner, operator, ...operatorData });
+          //     }
+          //   }
+          //   Vue.set(this, 'approvalForAlls', approvalForAlls);
+          //   const approvals = [];
+          //   for (const [ tokenId, tokenData ] of Object.entries(approvalsCollator)) {
+          //     approvals.push({ tokenId, ...tokenData });
+          //   }
+          //   Vue.set(this, 'approvals', approvals);
+          // },
+          // async collateERC1155() {
+          //   console.log(now() + " INFO collateERC1155");
+          //   const tokensCollator = {};
+          //   const approvalForAllsCollator = {};
+          //   for (const event of this.events) {
+          //     if (event.type == EVENT_TRANSFERSINGLE) {
+          //       if (!(event.tokenId in tokensCollator)) {
+          //         tokensCollator[event.tokenId] = {};
+          //       }
+          //       if (!(event.from in tokensCollator[event.tokenId])) {
+          //         tokensCollator[event.tokenId][event.from] = {
+          //           blockNumber: event.blockNumber,
+          //           txIndex: event.txIndex,
+          //           txHash: event.txHash,
+          //           logIndex: event.logIndex,
+          //           value: event.from == ADDRESS0 ? "0" : ethers.BigNumber.from(0).sub(event.value).toString(),
+          //         };
+          //       } else {
+          //         tokensCollator[event.tokenId][event.from].blockNumber = event.blockNumber;
+          //         tokensCollator[event.tokenId][event.from].txIndex = event.txIndex;
+          //         tokensCollator[event.tokenId][event.from].txHash = event.txHash;
+          //         tokensCollator[event.tokenId][event.from].logIndex = event.logIndex;
+          //         if (event.from != ADDRESS0) {
+          //           tokensCollator[event.tokenId][event.from].value = ethers.BigNumber.from(tokensCollator[event.tokenId][event.from].value).add(event.value).toString();
+          //         }
+          //       }
+          //       if (!(event.to in tokensCollator[event.tokenId])) {
+          //         tokensCollator[event.tokenId][event.to] = {
+          //           blockNumber: event.blockNumber,
+          //           txIndex: event.txIndex,
+          //           txHash: event.txHash,
+          //           logIndex: event.logIndex,
+          //           value: event.value,
+          //         };
+          //       } else {
+          //         tokensCollator[event.tokenId][event.to].blockNumber = event.blockNumber;
+          //         tokensCollator[event.tokenId][event.to].txIndex = event.txIndex;
+          //         tokensCollator[event.tokenId][event.to].txHash = event.txHash;
+          //         tokensCollator[event.tokenId][event.to].logIndex = event.logIndex;
+          //         tokensCollator[event.tokenId][event.to].value = ethers.BigNumber.from(tokensCollator[event.tokenId][event.to].value).add(event.value).toString();
+          //       }
+          //     } else if (event.type == EVENT_TRANSFERBATCH) {
+          //       for (let i = 0; i < event.tokenIds.length; i++) {
+          //         if (!(event.tokenIds[i] in tokensCollator)) {
+          //           tokensCollator[event.tokenIds[i]] = {};
+          //         }
+          //         if (!(event.from in tokensCollator[event.tokenIds[i]])) {
+          //           tokensCollator[event.tokenIds[i]][event.from] = {
+          //             blockNumber: event.blockNumber,
+          //             txIndex: event.txIndex,
+          //             txHash: event.txHash,
+          //             logIndex: event.logIndex,
+          //             value: event.from == ADDRESS0 ? "0" : ethers.BigNumber.from(0).sub(event.values[i]).toString(),
+          //           };
+          //         } else {
+          //           tokensCollator[event.tokenIds[i]][event.from].blockNumber = event.blockNumber;
+          //           tokensCollator[event.tokenIds[i]][event.from].txIndex = event.txIndex;
+          //           tokensCollator[event.tokenIds[i]][event.from].txHash = event.txHash;
+          //           tokensCollator[event.tokenIds[i]][event.from].logIndex = event.logIndex;
+          //           if (event.from != ADDRESS0) {
+          //             tokensCollator[event.tokenIds[i]][event.from].value = ethers.BigNumber.from(tokensCollator[event.tokenIds[i]][event.from].value).add(event.values[i]).toString();
+          //           }
+          //         }
+          //
+          //       }
+          //     } else if (event.type == EVENT_APPROVALFORALL) {
+          //       if (!(event.owner in approvalForAllsCollator)) {
+          //         approvalForAllsCollator[event.owner] = {};
+          //       }
+          //       approvalForAllsCollator[event.owner][event.operator] = {
+          //         blockNumber: event.blockNumber,
+          //         txIndex: event.txIndex,
+          //         txHash: event.txHash,
+          //         logIndex: event.logIndex,
+          //         approved: event.approved,
+          //       };
+          //     } else {
+          //       console.log(now() + " INFO collateERC1155 - ELSE event: " + JSON.stringify(event));
+          //     }
+          //   }
+          //   // console.log(now() + " INFO collateERC1155 - tokensCollator: " + JSON.stringify(tokensCollator, null, 2));
+          //   // console.log(now() + " INFO collateERC1155 - approvalForAllsCollator: " + JSON.stringify(approvalForAllsCollator, null, 2));
+          //   const tokens = [];
+          //   for (const [ tokenId, tokenData ] of Object.entries(tokensCollator)) {
+          //     for (const [ owner, ownerData ] of Object.entries(tokenData)) {
+          //       tokens.push({ tokenId, owner, ...ownerData });
+          //     }
+          //   }
+          //   Vue.set(this, 'tokens', tokens);
+          //   const approvalForAlls = [];
+          //   for (const [ owner, ownerData ] of Object.entries(approvalForAllsCollator)) {
+          //     for (const [ operator, operatorData ] of Object.entries(ownerData)) {
+          //       approvalForAlls.push({ owner, operator, ...operatorData });
+          //     }
+          //   }
+          //   Vue.set(this, 'approvalForAlls', approvalForAlls);
+          //   Vue.set(this, 'approvals', []);
+          // },
 
           async retrieveMetadata() {
             console.log(now() + " INFO retrieveMetadata BEGIN - settings: " + JSON.stringify(this.settings));

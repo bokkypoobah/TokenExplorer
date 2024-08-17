@@ -3,13 +3,7 @@ const EVENT_TRANSFERSINGLE = 1;
 const EVENT_TRANSFERBATCH = 2;
 const EVENT_APPROVAL = 3;
 const EVENT_APPROVALFORALL = 4;
-// const EVENTTYPE = {
-//   TRANSFER: 0,
-//   TRANSFERSINGLE: 1,
-//   TRANSFERBATCH: 2,
-//   APPROVAL: 3,
-//   APPROVALFORALL: 4,
-// };
+
 const EVENTNAME = [
   "Transfer",
   "TransferSingle",
@@ -31,7 +25,6 @@ function parseEventLogs(logs, contractType, chainId, latestBlockNumber) {
       if (log.topics[0] == "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef") {
         // ERC-20 event Transfer(address indexed from, address indexed to, uint tokens);
         // ERC-721 event Transfer(address indexed from, address indexed to, uint256 indexed tokenId);
-        // console.log(now() + " INFO parseEventLogs - Transfer log: " + JSON.stringify(log));
         let [ from, to, tokensOrTokenId, tokens, tokenId ] = [ null, null, null, null, null ];
         if (log.topics.length == 4) {
           from = ethers.utils.getAddress('0x' + log.topics[1].substring(26));
@@ -49,9 +42,9 @@ function parseEventLogs(logs, contractType, chainId, latestBlockNumber) {
         }
         if (from) {
           if (log.topics.length == 4) {
-            eventRecord = { type: EVENT_TRANSFER, from, to, tokenId: tokensOrTokenId /*, contractType: 721*/ };
+            eventRecord = { eventType: EVENT_TRANSFER, from, to, tokenId: tokensOrTokenId };
           } else {
-            eventRecord = { type: EVENT_TRANSFER, from, to, tokens: tokensOrTokenId /*, contractType: 20*/ };
+            eventRecord = { eventType: EVENT_TRANSFER, from, to, tokens: tokensOrTokenId };
           }
         }
       } else if (log.topics[0] == "0x8c5be1e5ebec7d5bd14f71427d1e84f3dd0314c0f7b2291e5b200ac8c7c3b925") {
@@ -63,12 +56,12 @@ function parseEventLogs(logs, contractType, chainId, latestBlockNumber) {
           owner = ethers.utils.getAddress('0x' + log.topics[1].substring(26));
           spender = ethers.utils.getAddress('0x' + log.topics[2].substring(26));
           tokenId = ethers.BigNumber.from(log.topics[3]).toString();
-          eventRecord = { type: EVENT_APPROVAL, owner, spender, tokenId /*, contractType: 721*/ };
+          eventRecord = { eventType: EVENT_APPROVAL, owner, spender, tokenId };
         } else if (log.topics.length == 3) {
           owner = ethers.utils.getAddress('0x' + log.topics[1].substring(26));
           spender = ethers.utils.getAddress('0x' + log.topics[2].substring(26));
           tokens = ethers.BigNumber.from(log.data).toString();
-          eventRecord = { type: EVENT_APPROVAL, owner, spender, tokens /*, contractType: 20*/ };
+          eventRecord = { eventType: EVENT_APPROVAL, owner, spender, tokens };
         }
       } else if (log.topics[0] == "0x17307eab39ab6107e8899845ad3d59bd9653f200f220920489ca2b5937696c31") {
         // ERC-721 event ApprovalForAll(address indexed owner, address indexed operator, bool approved);
@@ -77,19 +70,19 @@ function parseEventLogs(logs, contractType, chainId, latestBlockNumber) {
         const operator = ethers.utils.getAddress('0x' + log.topics[2].substring(26));
         approved = ethers.BigNumber.from(log.data) > 0;
         // NOTE: Both erc1155 and erc721 fall in this category, but assigning all to erc721
-        eventRecord = { type: EVENT_APPROVALFORALL, owner, operator, approved /*, contractType: 721*/ };
+        eventRecord = { eventType: EVENT_APPROVALFORALL, owner, operator, approved };
       } else if (log.topics[0] == "0xc3d58168c5ae7397731d063d5bbf3d657854427343f4c083240f7aacaa2d0f62") {
         // ERC-1155 TransferSingle (index_topic_1 address operator, index_topic_2 address from, index_topic_3 address to, uint256 id, uint256 value)
         const logData = erc1155Interface.parseLog(log);
         const [operator, from, to, id, value] = logData.args;
         tokenId = ethers.BigNumber.from(id).toString();
-        eventRecord = { type: EVENT_TRANSFERSINGLE, operator, from, to, tokenId, value: value.toString() /*, contractType: 1155*/ };
+        eventRecord = { eventType: EVENT_TRANSFERSINGLE, operator, from, to, tokenId, value: value.toString() /*, contractType: 1155*/ };
       } else if (log.topics[0] == "0x4a39dc06d4c0dbc64b70af90fd698a233a518aa5d07e595d983b8c0526c8f7fb") {
         // ERC-1155 TransferBatch (index_topic_1 address operator, index_topic_2 address from, index_topic_3 address to, uint256[] ids, uint256[] values)
         const logData = erc1155Interface.parseLog(log);
         const [operator, from, to, ids, values] = logData.args;
         const tokenIds = ids.map(e => ethers.BigNumber.from(e).toString());
-        eventRecord = { type: EVENT_TRANSFERBATCH, operator, from, to, tokenIds, values: values.map(e => e.toString()) /*, contractType: 1155*/ };
+        eventRecord = { eventType: EVENT_TRANSFERBATCH, operator, from, to, tokenIds, values: values.map(e => e.toString())};
       }
       if (eventRecord) {
         records.push( {
