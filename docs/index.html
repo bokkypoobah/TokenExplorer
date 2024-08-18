@@ -67,8 +67,35 @@
 
           <b-card class="m-0 p-0 border-0" body-class="m-1 p-0">
 
-            <b-modal ref="modalsearchcontracts" v-model="modalSearchContracts.show" hide-footer header-class="m-0 px-3 py-2" body-bg-variant="light" size="lg">
-              <template #modal-title>Search for Token Contracts</template>
+            <b-modal ref="modalsearchcontracts" v-model="modalSearchContracts.show" hide-footer header-class="m-0 px-3 py-2" body-class="m-0 p-0" body-bg-variant="light" size="lg">
+              <template #modal-title>Token Contract Search</template>
+              <div class="m-0 p-1">
+                <b-tabs card v-model="modalSearchContracts.tabIndex" content-class="mt-1" align="right">
+                  <b-tab no-body>
+                    <template #title>
+                      <span v-b-popover.hover.ds500="'ERC-20, ERC-721 and ERC-1155 token contracts already loaded'">Already Loaded</span>
+                    </template>
+                  </b-tab>
+                  <b-tab no-body>
+                    <template #title>
+                      <span v-b-popover.hover.ds500="'Search for ERC-20, ERC-721 and ERC-1155 tokens owned by one or more addresses'">Search by Owner Address</span>
+                    </template>
+                  </b-tab>
+                  <b-tab no-body active>
+                    <template #title>
+                      <span v-b-popover.hover.ds500="'Sample ERC-20, ERC-721 and ERC-1155 token contracts'">Sample Contracts</span>
+                    </template>
+                  </b-tab>
+                </b-tabs>
+                <div class="d-flex flex-wrap m-0 p-0">
+                  <div class="mt-0 pr-1" style="width: 10.0rem;">
+                    <b-form-input :disabled="contract.contractType != 721 && contract.contractType != 1155" type="text" size="sm" v-model.trim="settings.filter.tokenId" @change="saveSettings" debounce="600" v-b-popover.hover.ds500="'Regex search'" placeholder="🔍 tokenid"></b-form-input>
+                  </div>
+                </div>
+                <b-table small fixed striped :fields="eventsFields" :items="pagedSortedFilteredEvents" show-empty empty-html="Click [Retrieve] above" head-variant="light" class="mt-1">
+                </b-table>
+                Table here
+              </div>
             </b-modal>
 
             <b-modal ref="nonfungiblemodal" v-model="modalNonFungible.show" hide-footer header-class="m-0 px-3 py-2" body-bg-variant="light" size="lg">
@@ -152,13 +179,14 @@
                         <b-form-input type="text" size="sm" id="explorer-contract" v-model="settings.contract" @change="saveSettings(); loadData(settings.contract);" placeholder="Enter token contract address, or select from dropdown"></b-form-input>
                       </b-form-group>
                     </div>
-                    <!-- <div class="mt-0 pr-1">
-                      <b-button size="sm" @click="showModalSearchContracts" variant="link" v-b-popover.hover.ds500="'Search for token contracts'"><b-icon-search shift-v="+0" font-scale="1.2"></b-icon-search></b-button>
-                    </div> -->
+                    <!-- TODO WIP -->
+                    <div class="mt-0 pr-1">
+                      <b-button size="sm" @click="showModalSearchContracts" variant="link" v-b-popover.hover.ds500="'WIP: Search for token contracts'"><b-icon-search shift-v="+0" font-scale="1.2"></b-icon-search></b-button>
+                    </div>
                     <div class="mt-0 pr-0">
                       <b-dropdown size="sm" id="dropdown-left" text="" variant="link" v-b-popover.hover.ds500="'Some sample token contracts'" class="m-0 ml-1 p-0">
-                        <b-dropdown-item v-if="sampleContracts('all').length == 0" disabled>No sample contracts on this network</b-dropdown-item>
-                        <div v-for="(item, index) of sampleContracts('all')" v-bind:key="index">
+                        <b-dropdown-item v-if="sampleContracts.length == 0" disabled>No sample contracts on this network</b-dropdown-item>
+                        <div v-for="(item, index) of sampleContracts" v-bind:key="index">
                           <b-dropdown-item @click="settings.contract = item.contract; saveSettings(); loadData(settings.contract);">{{ index }}. {{ 'ERC-' + item.type }} {{ item.contract.substring(0, 8) + '...' + item.contract.slice(-6) + ' ' + item.name }}</b-dropdown-item>
                         </div>
                       </b-dropdown>
@@ -910,7 +938,8 @@
             },
           },
           modalSearchContracts: {
-            show: false,
+            show: true,
+            tabIndex: 0,
           },
           modalNonFungible: {
             show: false,
@@ -1050,6 +1079,14 @@
           },
           nonFungibleViewer() {
             return this.network.nonFungibleViewer || "https://opensea.io/assets/ethereum/${contract}/${tokenId}";
+          },
+          sampleContracts() {
+            const results = [];
+            for (const [ contract, contractData ] of Object.entries(this.network && this.network.contracts || {})) {
+              results.push({ contract, type: contractData.type, name: contractData.name });
+            }
+            console.log(now() + " INFO sampleContracts - results: " + JSON.stringify(results, null, 2));
+            return results;
           },
           erc20Description() {
             if (this.erc20.symbol || this.erc20.name || this.erc20.decimals || this.erc20.totalSupply) {
@@ -1555,20 +1592,12 @@
 
         // --- METHODS ---
         methods: {
-          sampleContracts(type) {
-            const results = [];
-            for (const [ contract, contractData ] of Object.entries(this.network && this.network.contracts || {})) {
-              if (contractData.type == type || type == "all") {
-                results.push({ contract, type: contractData.type, name: contractData.name });
-              }
-            }
-            return results;
-          },
           nonFungibleViewerURL(contract, tokenId) {
             return this.nonFungibleViewer.replace(/\${contract}/, contract).replace(/\${tokenId}/, tokenId);
           },
           async showModalSearchContracts() {
             console.log(now() + " retrieveERC20 showModalSearchContracts");
+            this.modalSearchContracts.show = true;
           },
           async viewNonFungible(type, contract, tokenId) {
             console.log(now() + " retrieveERC20 viewNonFungible - type: " + type + ", contract: " + contract + ", tokenId: " + tokenId);
