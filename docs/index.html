@@ -1923,7 +1923,7 @@
             } while (!done);
             Vue.set(this, 'events', events);
             // console.log(now() + " INFO loadERC20 - events[0..2]: " + JSON.stringify(events.slice(0, 3), null, 2));
-            console.log(now() + " INFO loadERC20 - tokensCollator: " + JSON.stringify(tokensCollator, null, 2));
+            // console.log(now() + " INFO loadERC20 - tokensCollator: " + JSON.stringify(tokensCollator, null, 2));
             // console.log(now() + " INFO loadERC20 - approvalsCollator: " + JSON.stringify(approvalsCollator, null, 2));
             const tokens = [];
             for (const [ owner, balance ] of Object.entries(tokensCollator)) {
