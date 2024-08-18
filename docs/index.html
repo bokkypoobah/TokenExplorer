@@ -78,7 +78,7 @@
                   </b-tab>
                   <b-tab no-body>
                     <template #title>
-                      <span v-b-popover.hover.ds500="'Search for ERC-20, ERC-721 and ERC-1155 tokens owned by one or more addresses'">Search by Owner Address</span>
+                      <span v-b-popover.hover.ds500="'Search for ERC-20, ERC-721 and ERC-1155 tokens owned by one or more addresses'">Search by Owner Addresses</span>
                     </template>
                   </b-tab>
                   <b-tab no-body active>
@@ -938,7 +938,7 @@
             },
           },
           modalSearchContracts: {
-            show: true,
+            show: false,
             tabIndex: 0,
           },
           modalNonFungible: {
@@ -1870,7 +1870,7 @@
               for (const event of records) {
                 // console.log(now() + " INFO loadERC20 - event: " + JSON.stringify(event));
                 events.push(event);
-                if (event.type == EVENT_TRANSFER) {
+                if (event.eventType == EVENT_TRANSFER) {
                   if (!(event.from in tokensCollator)) {
                     tokensCollator[event.from] = {
                       blockNumber: event.blockNumber,
@@ -1904,7 +1904,7 @@
                     tokensCollator[event.to].logIndex = event.logIndex;
                     tokensCollator[event.to].tokens = ethers.BigNumber.from(tokensCollator[event.to].tokens).add(event.tokens).toString();
                   }
-                } else if (event.type == EVENT_APPROVAL) {
+                } else if (event.eventType == EVENT_APPROVAL) {
                   if (!(event.owner in approvalsCollator)) {
                     approvalsCollator[event.owner] = {};
                   }
@@ -1923,7 +1923,7 @@
             } while (!done);
             Vue.set(this, 'events', events);
             // console.log(now() + " INFO loadERC20 - events[0..2]: " + JSON.stringify(events.slice(0, 3), null, 2));
-            // console.log(now() + " INFO loadERC20 - tokensCollator: " + JSON.stringify(tokensCollator, null, 2));
+            console.log(now() + " INFO loadERC20 - tokensCollator: " + JSON.stringify(tokensCollator, null, 2));
             // console.log(now() + " INFO loadERC20 - approvalsCollator: " + JSON.stringify(approvalsCollator, null, 2));
             const tokens = [];
             for (const [ owner, balance ] of Object.entries(tokensCollator)) {
