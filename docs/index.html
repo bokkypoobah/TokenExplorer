@@ -414,10 +414,9 @@
                   <template #cell(tokensTokenId)="data">
                     <div v-if="data.item.eventType == EVENT_TRANSFER">
                       <div v-if="data.item.contractType == 20">
-                        <font size="-2" class="text-muted">
-                          {{ formatNumber(data.item.tokens) }}
-                        </font>
-                        {{ formatDecimals(data.item.tokens, contract.decimals) }}
+                        <b-badge v-b-popover.hover.ds500="formatNumber(data.item.tokens)" variant="light">
+                          {{ formatDecimals(data.item.tokens, contract.decimals) }}
+                        </b-badge>
                       </div>
                       <div v-else-if="data.item.contractType == 721">
                         <b-badge v-if="data.item.tokenId" pill @click="viewNonFungible(type, settings.contract, data.item.tokenId)" v-b-popover.hover.ds500="'Click to view token'" variant="info">
@@ -440,10 +439,16 @@
                     </div>
                     <div v-else-if="data.item.eventType == EVENT_APPROVAL">
                       <div v-if="data.item.contractType == 20">
-                        <font size="-2" class="text-muted">
-                          {{ formatNumber(data.item.tokens) }}
-                        </font>
-                        {{ formatDecimals(data.item.tokens, contract.decimals) }}
+                        <div v-if="data.item.tokens.toString().length > 30">
+                          <b-badge v-b-popover.hover.ds500="formatDecimals(data.item.tokens, contract.decimals) + ' = ' + formatNumber(data.item.tokens)" variant="light">
+                          &infin;
+                          </b-badge>
+                        </div>
+                        <div v-else>
+                          <b-badge v-b-popover.hover.ds500="formatNumber(data.item.tokens)" variant="light">
+                          {{ formatDecimals(data.item.tokens, contract.decimals) }}
+                          </b-badge>
+                        </div>
                       </div>
                       <div v-else>
                         <b-badge v-if="data.item.tokenId" pill @click="viewNonFungible(type, settings.contract, data.item.tokenId)" v-b-popover.hover.ds500="'Click to view token'" variant="info">
@@ -493,10 +498,9 @@
                   </template>
                   <template #cell(tokens)="data">
                     <div v-if="contract.contractType == 20">
-                      <font size="-2" class="text-muted">
-                        {{ formatNumber(data.item.tokens) }}
-                      </font>
-                      {{ formatDecimals(data.item.tokens, contract.decimals) }}
+                      <b-badge v-b-popover.hover.ds500="formatNumber(data.item.tokens)" variant="light">
+                        {{ formatDecimals(data.item.tokens, contract.decimals) }}
+                      </b-badge>
                     </div>
                     <div v-else-if="contract.contractType == 721 || contract.contractType == 1155">
                       <b-badge v-if="data.item.tokenId" pill @click="viewNonFungible(contract.contractType, contract.contract, data.item.tokenId)" v-b-popover.hover.ds500="'Click to view token'" variant="info">
@@ -542,17 +546,16 @@
                   </template>
                   <template #cell(tokens)="data">
                     <div v-if="contract.contractType == 20">
-                      <font size="-2" class="text-muted">
-                        {{ formatNumber(data.item.tokens) }}
-                      </font>
-                      <b-link size="sm" :href="explorer + 'tx/' + data.item.txHash + '#eventlog#' + data.item.logIndex" variant="link" v-b-popover.hover.ds500="formatDecimals(data.item.tokens, data.item.decimals)" target="_blank">
-                        <span v-if="data.item.toString().length > 30">
-                          &infin;
-                        </span>
-                        <span v-else>
-                          {{ formatDecimals(data.item.tokens, erc20.decimals) }}
-                        </span>
-                      </b-link>
+                      <div v-if="data.item.tokens.toString().length > 30">
+                        <b-badge v-b-popover.hover.ds500="formatDecimals(data.item.tokens, contract.decimals) + ' = ' + formatNumber(data.item.tokens)" variant="light">
+                        &infin;
+                        </b-badge>
+                      </div>
+                      <div v-else>
+                        <b-badge v-b-popover.hover.ds500="formatNumber(data.item.tokens)" variant="light">
+                        {{ formatDecimals(data.item.tokens, contract.decimals) }}
+                        </b-badge>
+                      </div>
                     </div>
                     <div v-if="contract.contractType == 721">
                       <b-badge v-if="data.item.tokenId" pill @click="viewNonFungible(contract.contractType, contract.contract, data.item.tokenId)" v-b-popover.hover.ds500="'Click to view token'" variant="info">
