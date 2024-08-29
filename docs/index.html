@@ -47,7 +47,8 @@
           </b-navbar-brand>
           <b-navbar-nav class="ml-auto">
             <b-nav-item size="sm" @click="settings.tabIndex = 0; saveSettings();" :active="settings.tabIndex == 0" active-class="active" v-b-popover.hover.ds500="'Home, and information on this tool'">Home</b-nav-item>
-            <b-nav-item size="sm" @click="settings.tabIndex = 1; saveSettings();" :active="settings.tabIndex == 1" active-class="active" v-b-popover.hover.ds500="'ERC-20, ERC-721 and ERC-1155 token contract explorer'">Explorer</b-nav-item>
+            <b-nav-item size="sm" @click="settings.tabIndex = 1; saveSettings();" :active="settings.tabIndex == 1" active-class="active" v-b-popover.hover.ds500="'ERC-20, ERC-721 and ERC-1155 token contracts'">Contracts</b-nav-item>
+            <b-nav-item size="sm" @click="settings.tabIndex = 2; saveSettings();" :active="settings.tabIndex == 2" active-class="active" v-b-popover.hover.ds500="'ERC-20, ERC-721 and ERC-1155 token contract explorer'">Explorer</b-nav-item>
             <!-- <b-nav-item size="sm" @click="settings.tabIndex = 2; saveSettings();" :active="settings.tabIndex == 2" active-class="active" v-b-popover.hover.ds500="'ERC-20 functions to be migrated'">To Do</b-nav-item> -->
             <!-- <b-nav-item size="sm" @click="settings.tabIndex = 3; saveSettings();" :active="settings.tabIndex == 3" active-class="active" v-b-popover.hover.ds500="'ERC-721 Non-Fungible Tokens'">ERC-721</b-nav-item> -->
             <!-- <b-nav-item size="sm" @click="settings.tabIndex = 4; saveSettings();" :active="settings.tabIndex == 4" active-class="active" v-b-popover.hover.ds500="'ERC-1155 Non-Fungible Tokens - WIP'">ERC-1155</b-nav-item> -->
@@ -168,8 +169,15 @@
               </b-card-body>
             </b-card>
 
-            <!-- Explorer: -->
+            <!-- Contracts: -->
             <b-card v-if="settings.tabIndex == 1" no-header body-class="m-0 p-0" class="m-0 p-0 border-0">
+              <!-- <b-table small fixed striped :fields="eventsFields" :items="pagedSortedFilteredEvents" show-empty empty-html="Click [Retrieve] above" head-variant="light" class="mt-1"> -->
+              <b-table small fixed striped :items="pagedSortedFilteredContracts" show-empty empty-html="Click [+] above" head-variant="light" class="mt-1">
+              </b-table>
+            </b-card>
+
+            <!-- Explorer: -->
+            <b-card v-if="settings.tabIndex == 2" no-header body-class="m-0 p-0" class="m-0 p-0 border-0">
               <!-- Tabs: -->
               <b-tabs card v-model="settings.tableIndex" @changed="saveSettings();" content-class="mt-1" align="left">
                 <template #tabs-start>
@@ -603,7 +611,7 @@
             </b-card>
 
             <!-- ERC-20: -->
-            <b-card v-if="settings.tabIndex == 2" header="ERC-20" class="m-0 p-0">
+            <b-card v-if="settings.tabIndex == 3" header="ERC-20" class="m-0 p-0">
               <b-form-group label="contract:" label-for="erc20-contract" label-size="lg" label-class="font-weight-bold pt-0" label-cols-sm="2" label-align-sm="right" :state="!settings.erc20.contract || validAddress(settings.erc20.contract)" :invalid-feedback="'Invalid address'" :description="erc20Description" class="mx-0 my-1 p-0">
                 <b-input-group size="sm" class="w-50">
                   <b-form-input type="text" size="sm" id="erc20-contract" v-model="settings.erc20.contract" @change="saveSettings" placeholder="Enter token contract address, or select from dropdown"></b-form-input>
@@ -867,6 +875,12 @@
             tabIndex: 0,
 
             // --- New ---
+            contractsTable: {
+              filter: null,
+              currentPage: 1,
+              pageSize: 15,
+              sortOption: 'addressasc',
+            },
             contract: null,
             filter: {
               tokenId: null,
@@ -896,7 +910,7 @@
               pageSize: 15,
               sortOption: 'txorderdsc',
             },
-            version: 3,
+            version: 4,
           },
 
           contract: {
@@ -964,7 +978,7 @@
             halt: false,
           },
           db: {
-            name: "tokenexplorerdata080b",
+            name: "tokenexplorerdata080c",
             version: 1,
             schemaDefinition: {
               contracts: '[chainId+contract],contract',
@@ -1088,7 +1102,7 @@
             for (const [ contract, contractData ] of Object.entries(this.network && this.network.contracts || {})) {
               results.push({ contract, type: contractData.type, name: contractData.name });
             }
-            console.log(now() + " INFO sampleContracts - results: " + JSON.stringify(results, null, 2));
+            // console.log(now() + " INFO sampleContracts - results: " + JSON.stringify(results, null, 2));
             return results;
           },
           erc20Description() {
@@ -1096,6 +1110,121 @@
               return "symbol: '" + (this.erc20.symbol || '') + "', name: '" + (this.erc20.name || '') + "', decimals: " + (this.erc20.decimals || '') + ", totalSupply: " + (this.erc20.totalSupply && this.formatDecimals(this.erc20.totalSupply, this.erc20.decimals || 0) || '');
             }
             return null;
+          },
+
+          // --- Contracts: ---
+          sortedFilteredContracts() {
+            // console.log(now() + " sortedFilteredContracts");
+            const results = [];
+            for (const item of this.contracts) {
+              results.push(item);
+            }
+            // const { tokenIdRegex, addressRegex, blockTxHashRegex } = this.filterRegexes;
+            // const tokensMetadata = this.metadata[this.chainId] && this.metadata[this.chainId][this.settings.contract] && this.metadata[this.chainId][this.settings.contract].tokens || {};
+            // for (const item of this.events) {
+            //   const metadata = tokensMetadata[item.tokenId] || null;
+            //   let metadatas = null;
+            //   if (item.eventType == EVENT_TRANSFERBATCH) {
+            //     metadatas = [];
+            //     for (const [index, tokenId] of item.tokenIds.entries()) {
+            //       metadatas.push({
+            //         tokenId,
+            //         value: item.values[index],
+            //         name: tokensMetadata[tokenId] && tokensMetadata[tokenId].name || null,
+            //         image: tokensMetadata[tokenId] && tokensMetadata[tokenId].image || null,
+            //         // attributes: tokensMetadata[tokenId] && tokensMetadata[tokenId].attributes || null,
+            //       });
+            //     }
+            //   }
+            //   let include = true;
+            //   if (addressRegex) {
+            //     if (item.eventType == EVENT_TRANSFER) {
+            //       if (!(addressRegex.test(item.from) || addressRegex.test(item.to) || addressRegex.test(item.txHash) || addressRegex.test(item.blockNumber.toString()))) {
+            //         include = false;
+            //       }
+            //     } else if (item.eventType == EVENT_TRANSFERSINGLE) {
+            //       if (!(addressRegex.test(item.from) || addressRegex.test(item.to) || addressRegex.test(item.txHash) || addressRegex.test(item.blockNumber.toString()) || addressRegex.test(item.tokenId.toString()))) {
+            //         include = false;
+            //       }
+            //     } else if (item.eventType == EVENT_TRANSFERBATCH) {
+            //       if (!(addressRegex.test(item.from) || addressRegex.test(item.to) || addressRegex.test(item.txHash) || addressRegex.test(item.blockNumber.toString()))) {
+            //         include = false;
+            //       }
+            //     } else if (item.eventType == EVENT_APPROVAL) {
+            //       if (!(addressRegex.test(item.owner) || addressRegex.test(item.spender) || addressRegex.test(item.txHash) || addressRegex.test(item.blockNumber))) {
+            //         include = false;
+            //       }
+            //     } else if (item.eventType == EVENT_APPROVALFORALL) {
+            //       if (!(addressRegex.test(item.owner) || addressRegex.test(item.operator) || addressRegex.test(item.txHash) || addressRegex.test(item.blockNumber))) {
+            //         include = false;
+            //       }
+            //     }
+            //   }
+            //   if (include && tokenIdRegex && (item.contractType == 721 || item.contractType == 1155)) {
+            //     if (item.contractType == 721 || (item.contractType == 1155 && item.eventType == EVENT_TRANSFERSINGLE)) {
+            //       if (!(tokenIdRegex.test(item.tokenId))) {
+            //         include = false;
+            //       }
+            //     } else if (item.contractType == 1155 && item.eventType == EVENT_TRANSFERBATCH) {
+            //       let found = false;
+            //       for (const [index, tokenId] of item.tokenIds.entries()) {
+            //         if (tokenIdRegex.test(tokenId)) {
+            //           found = true;
+            //           break;
+            //         }
+            //       }
+            //       if (!found) {
+            //         include = false;
+            //       }
+            //     } else {
+            //       include = false;
+            //     }
+            //   }
+            //   if (include && blockTxHashRegex) {
+            //     if (!(blockTxHashRegex.test(item.txHash) || blockTxHashRegex.test(item.blockNumber))) {
+            //       include = false;
+            //     }
+            //   }
+            //   if (include) {
+            //     if (metadatas) {
+            //       results.push({
+            //         ...item,
+            //         tokens: metadatas,
+            //       });
+            //     } else if (metadata) {
+            //       results.push({
+            //         ...item,
+            //         name: metadata.name,
+            //         image: metadata.image,
+            //         // attributes: metadata.attributes,
+            //       });
+            //     } else {
+            //       results.push(item);
+            //     }
+            //   }
+            // }
+            // if (this.settings.contractsTable.sortOption == "txorderasc") {
+            //   results.sort((a, b) => {
+            //     if (a.blockNumber == b.blockNumber) {
+            //       return a.logIndex - b.logIndex;
+            //     } else {
+            //       return a.blockNumber - b.blockNumber;
+            //     }
+            //   });
+            // } else if (this.settings.contractsTable.sortOption == "txorderdsc") {
+            //   results.sort((a, b) => {
+            //     if (a.blockNumber == b.blockNumber) {
+            //       return b.logIndex - a.logIndex;
+            //     } else {
+            //       return b.blockNumber - a.blockNumber;
+            //     }
+            //   });
+            // }
+            return results;
+          },
+          pagedSortedFilteredContracts() {
+            // console.log(now() + " pagedSortedFilteredContracts - this.tokens[0..3]: " + JSON.stringify(this.sortedFilteredContracts.slice(0, 4), null, 2));
+            return this.sortedFilteredContracts.slice((this.settings.contractsTable.currentPage - 1) * this.settings.contractsTable.pageSize, this.settings.contractsTable.currentPage * this.settings.contractsTable.pageSize);
           },
 
           // --- Explorer: ---
@@ -1840,9 +1969,9 @@
             const contracts = await db.contracts.toArray();
             // console.log(now() + " INFO loadData - contracts: " + JSON.stringify(contracts.map(e => e.contract + ' ' + e.contractType + ' ' + e.symbol + ' ' + e.name), null, 2));
             Vue.set(this, 'contracts', contracts);
-            const data = await db.contracts.where("contract").equals(ethers.utils.getAddress(contractAddress)).toArray();
+            const data = contractAddress && await db.contracts.where("contract").equals(ethers.utils.getAddress(contractAddress)).toArray();
             let contract = null;
-            if (data.length == 1) {
+            if (data && data.length == 1) {
               contract = data[0];
               // console.log(now() + " INFO loadData - contract: " + JSON.stringify(contract));
               Vue.set(this, 'contract', contract);
