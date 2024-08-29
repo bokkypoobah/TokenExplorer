@@ -171,8 +171,21 @@
 
             <!-- Contracts: -->
             <b-card v-if="settings.tabIndex == 1" no-header body-class="m-0 p-0" class="m-0 p-0 border-0">
-              <!-- <b-table small fixed striped :fields="eventsFields" :items="pagedSortedFilteredEvents" show-empty empty-html="Click [Retrieve] above" head-variant="light" class="mt-1"> -->
-              <b-table small fixed striped :items="pagedSortedFilteredContracts" show-empty empty-html="Click [+] above" head-variant="light" class="mt-1">
+              <b-table small fixed striped :fields="contractsFields" :items="pagedSortedFilteredContracts" show-empty empty-html="Click [+] above" head-variant="light" class="mt-1">
+                <template #cell(number)="data">
+                  <font size="-1" class="text-muted">{{ parseInt(data.index) + ((settings.contractsTable.currentPage - 1) * settings.contractsTable.pageSize) + 1 }}</font>
+                </template>
+                <template #cell(contract)="data">
+                  <b-link size="sm" :href="explorer + 'token/' + data.item.contract" variant="link" target="_blank">
+                    {{ data.item.contract }}
+                  </b-link>
+                </template>
+                <template #cell(contractType)="data">
+                  <font size="-1">{{ data.item.contractType }}</font>
+                </template>
+                <template #cell(symbolNameDecimals)="data">
+                  <font size="-1">{{ data.item }}</font>
+                </template>
               </b-table>
             </b-card>
 
@@ -363,7 +376,7 @@
               <div v-if="settings.tableIndex == 0">
                 <b-table small fixed striped :fields="eventsFields" :items="pagedSortedFilteredEvents" show-empty empty-html="Click [Retrieve] above" head-variant="light" class="mt-1">
                   <template #cell(number)="data">
-                      <font size="-1" class="text-muted">{{ parseInt(data.index) + ((settings.eventsTable.currentPage - 1) * settings.eventsTable.pageSize) + 1 }}</font>
+                    <font size="-1" class="text-muted">{{ parseInt(data.index) + ((settings.eventsTable.currentPage - 1) * settings.eventsTable.pageSize) + 1 }}</font>
                   </template>
                   <template #cell(when)="data">
                     <font size="-1">
@@ -379,7 +392,7 @@
                       <font size="-2" v-b-popover.hover.ds500="'txHash'" class="text-muted">{{ data.item.txHash.substring(0, 8) + '...' + data.item.txHash.slice(-6) }}</font>
                     </font>
                   </template>
-                  <template #cell(type)="data">
+                  <template #cell(contractType)="data">
                     <font size="-1">{{ EVENTNAME[data.item.eventType] }}</font>
                   </template>
                   <template #cell(fromOwner)="data">
@@ -1040,6 +1053,14 @@
             { value: 1000, text: '1k' },
           ],
 
+          contractsFields: [
+            { key: 'number', label: '#', sortable: false, thStyle: 'width: 5%;', tdClass: 'text-truncate' },
+            { key: 'contract', label: 'Contract', sortable: false, thStyle: 'width: 30%;', thClass: 'text-left', tdClass: 'text-left' },
+            { key: 'contractType', label: 'Type', sortable: false, thStyle: 'width: 5%;', tdClass: 'text-truncate' },
+            { key: 'symbolNameDecimals', label: 'Symbol / Name / Decimals', sortable: false, thStyle: 'width: 30%;', thClass: 'text-left', tdClass: 'text-left' },
+            { key: 'totalSupply', label: 'Total Supply', sortable: false, thStyle: 'width: 15%;', thClass: 'text-right', tdClass: 'text-right' },
+            { key: 'owners', label: 'Owners', sortable: false, thStyle: 'width: 15%;', thClass: 'text-right', tdClass: 'text-right' },
+          ],
           eventsFields: [
             { key: 'number', label: '#', sortable: false, thStyle: 'width: 5%;', tdClass: 'text-truncate' },
             { key: 'when', label: 'When', sortable: false, thStyle: 'width: 30%;', thClass: 'text-left', tdClass: 'text-left' },
