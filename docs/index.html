@@ -242,7 +242,25 @@
                   <font size="-1">{{ data.item.contractType }}</font>
                 </template>
                 <template #cell(symbolNameDecimals)="data">
-                  <font size="-1">{{ data.item }}</font>
+                  <b-badge v-if="data.item.symbol" variant="light" v-b-popover.hover.ds500="'symbol'" class="m-0 mt-1">
+                    {{ data.item.symbol }}
+                  </b-badge>
+                  <b-badge v-if="data.item.name" variant="light" v-b-popover.hover.ds500="'name'" class="m-0 mt-1">
+                    {{ data.item.name }}
+                  </b-badge>
+                  <b-badge v-if="data.item.decimals" variant="light" v-b-popover.hover.ds500="'decimals'" class="m-0 mt-1">
+                    {{ data.item.decimals }}
+                  </b-badge>
+                </template>
+                <template #cell(totalSupply)="data">
+                  <b-badge v-if="data.item.totalSupply" variant="light" v-b-popover.hover.ds500="(data.item.totalSupply && formatNumber(data.item.totalSupply) || '')" class="m-0 mt-1">
+                    {{ formatDecimals(data.item.totalSupply, data.item.decimals) }}
+                  </b-badge>
+                </template>
+                <template #cell(events)="data">
+                  <b-badge variant="light" v-b-popover.hover.ds500="'Last updated ' + formatTimestamp(data.item.timestamp)" class="m-0 mt-1">
+                    {{ data.item.events }}
+                  </b-badge>
                 </template>
               </b-table>
             </b-card>
@@ -1121,7 +1139,7 @@
             { key: 'contractType', label: 'Type', sortable: false, thStyle: 'width: 5%;', tdClass: 'text-truncate' },
             { key: 'symbolNameDecimals', label: 'Symbol / Name / Decimals', sortable: false, thStyle: 'width: 30%;', thClass: 'text-left', tdClass: 'text-left' },
             { key: 'totalSupply', label: 'Total Supply', sortable: false, thStyle: 'width: 15%;', thClass: 'text-right', tdClass: 'text-right' },
-            { key: 'owners', label: 'Owners', sortable: false, thStyle: 'width: 15%;', thClass: 'text-right', tdClass: 'text-right' },
+            { key: 'events', label: 'Events', sortable: false, thStyle: 'width: 15%;', thClass: 'text-right', tdClass: 'text-right' },
           ],
           eventsFields: [
             { key: 'number', label: '#', sortable: false, thStyle: 'width: 5%;', tdClass: 'text-truncate' },
