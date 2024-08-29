@@ -233,9 +233,9 @@
                 <template #cell(number)="data">
                   <font size="-1" class="text-muted">{{ parseInt(data.index) + ((settings.contractsTable.currentPage - 1) * settings.contractsTable.pageSize) + 1 }}</font>
                 </template>
-                <template #cell(contract)="data">
-                  <b-link size="sm" :href="explorer + 'token/' + data.item.contract" variant="link" target="_blank">
-                    {{ data.item.contract }}
+                <template #cell(address)="data">
+                  <b-link size="sm" :href="explorer + 'token/' + data.item.address" variant="link" target="_blank">
+                    {{ data.item.address }}
                   </b-link>
                 </template>
                 <template #cell(contractType)="data">
@@ -1117,7 +1117,7 @@
 
           contractsFields: [
             { key: 'number', label: '#', sortable: false, thStyle: 'width: 5%;', tdClass: 'text-truncate' },
-            { key: 'contract', label: 'Contract Address', sortable: false, thStyle: 'width: 30%;', thClass: 'text-left', tdClass: 'text-left' },
+            { key: 'address', label: 'Address', sortable: false, thStyle: 'width: 30%;', thClass: 'text-left', tdClass: 'text-left' },
             { key: 'contractType', label: 'Type', sortable: false, thStyle: 'width: 5%;', tdClass: 'text-truncate' },
             { key: 'symbolNameDecimals', label: 'Symbol / Name / Decimals', sortable: false, thStyle: 'width: 30%;', thClass: 'text-left', tdClass: 'text-left' },
             { key: 'totalSupply', label: 'Total Supply', sortable: false, thStyle: 'width: 15%;', thClass: 'text-right', tdClass: 'text-right' },
@@ -2067,7 +2067,7 @@
                 contracts[contract.chainId] = {};
               }
               if (!(contract.contract in contracts[contract.chainId])) {
-                contracts[contract.chainId][contract.contract] = contract;
+                contracts[contract.chainId][contract.contract] = { ...contract, chainId: undefined, contract: undefined };
               }
             }
             console.log(now() + " INFO loadData - contracts: " + JSON.stringify(contracts, null, 2));
