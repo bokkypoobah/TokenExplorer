@@ -467,7 +467,7 @@
                       <font size="-2" v-b-popover.hover.ds500="'txHash'" class="text-muted">{{ data.item.txHash.substring(0, 8) + '...' + data.item.txHash.slice(-6) }}</font>
                     </font>
                   </template>
-                  <template #cell(contractType)="data">
+                  <template #cell(type)="data">
                     <font size="-1">{{ EVENTNAME[data.item.eventType] }}</font>
                   </template>
                   <template #cell(fromOwner)="data">
