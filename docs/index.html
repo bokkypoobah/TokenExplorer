@@ -228,8 +228,7 @@
                 </div>
               </div>
 
-
-              <b-table small fixed striped :fields="contractsFields" :items="pagedSortedFilteredContracts" show-empty empty-html="Click [+] above" head-variant="light" class="mt-1">
+              <b-table ref="contractsTable" small fixed striped selectable select-mode="single" @row-selected='contractsRowSelected' :fields="contractsFields" :items="pagedSortedFilteredContracts" show-empty empty-html="Click [+] above" head-variant="light" class="mt-1">
                 <template #cell(number)="data">
                   <font size="-1" class="text-muted">{{ parseInt(data.index) + ((settings.contractsTable.currentPage - 1) * settings.contractsTable.pageSize) + 1 }}</font>
                 </template>
@@ -1835,15 +1834,24 @@
 
         // --- METHODS ---
         methods: {
+          async contractsRowSelected(item) {
+            console.log(now() + " INFO contractsRowSelected - item: " + JSON.stringify(item, null, 2));
+            if (item && item.length > 0) {
+              this.settings.tabIndex = 2;
+              this.settings.contract = item[0].address;
+              this.$refs.contractsTable.clearSelected();
+              await this.loadData(this.settings.contract);
+            }
+          },
           nonFungibleViewerURL(contract, tokenId) {
             return this.nonFungibleViewer.replace(/\${contract}/, contract).replace(/\${tokenId}/, tokenId);
           },
           async showModalSearchContracts() {
-            console.log(now() + " retrieveERC20 showModalSearchContracts");
+            console.log(now() + " INFO showModalSearchContracts");
             this.modalSearchContracts.show = true;
           },
           async viewNonFungible(type, contract, tokenId) {
-            console.log(now() + " retrieveERC20 viewNonFungible - type: " + type + ", contract: " + contract + ", tokenId: " + tokenId);
+            console.log(now() + " INFO viewNonFungible - type: " + type + ", contract: " + contract + ", tokenId: " + tokenId);
             Vue.set(this.modalNonFungible, 'show', true);
             Vue.set(this.modalNonFungible, 'type', type);
             Vue.set(this.modalNonFungible, 'contract', contract);
