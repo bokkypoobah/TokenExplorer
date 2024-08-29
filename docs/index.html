@@ -171,6 +171,64 @@
 
             <!-- Contracts: -->
             <b-card v-if="settings.tabIndex == 1" no-header body-class="m-0 p-0" class="m-0 p-0 border-0">
+
+              <div class="d-flex flex-wrap m-0 p-0">
+                <div class="mt-0 pr-1" style="width: 15.0rem;">
+                  <b-form-input type="text" size="sm" v-model.trim="settings.contractsTable.filter" @change="saveSettings" debounce="600" v-b-popover.hover.ds500="'Regex search'" placeholder="🔍 address/symbol/name"></b-form-input>
+                </div>
+                <!-- <div class="mt-0 pr-1" style="width: 10.0rem;">
+                  <b-form-input type="text" size="sm" v-model.trim="settings.filter.address" @change="saveSettings" debounce="600" v-b-popover.hover.ds500="'Regex search'" placeholder="🔍 address"></b-form-input>
+                </div>
+                <div class="mt-0 pr-1" style="width: 10.0rem;">
+                  <b-form-input type="text" size="sm" v-model.trim="settings.filter.blockTxHash" @change="saveSettings" debounce="600" v-b-popover.hover.ds500="'Regex search'" placeholder="🔍 block#/txhash"></b-form-input>
+                </div> -->
+                <div class="mt-0 flex-grow-1">
+                </div>
+                <!-- <div v-if="sync.completed == null" class="mt-0 pr-1">
+                  <div v-if="settings.tableIndex == 0">
+                    <b-button size="sm" :disabled="pagedSortedFilteredEvents == 0" @click="retrieveTimestamps(pagedSortedFilteredEvents.map(e => e.blockNumber))" variant="link" v-b-popover.hover.ds500="'Retrieve timestamps for events below'"><b-icon-clock-history shift-v="+1" font-scale="1.2"></b-icon-clock-history></b-button>
+                  </div>
+                  <div v-else-if="settings.tableIndex == 1">
+                    <b-button size="sm" :disabled="pagedSortedFilteredTokens == 0" @click="retrieveTimestamps(pagedSortedFilteredTokens.map(e => e.blockNumber))" variant="link" v-b-popover.hover.ds500="'Retrieve timestamps for tokens below'"><b-icon-clock-history shift-v="+1" font-scale="1.2"></b-icon-clock-history></b-button>
+                  </div>
+                  <div v-else-if="settings.tableIndex == 2">
+                    <b-button size="sm" :disabled="pagedSortedFilteredApprovals == 0" @click="retrieveTimestamps(pagedSortedFilteredApprovals.map(e => e.blockNumber))" variant="link" v-b-popover.hover.ds500="'Retrieve timestamps for approvals'"><b-icon-clock-history shift-v="+1" font-scale="1.2"></b-icon-clock-history></b-button>
+                  </div>
+                  <div v-else-if="settings.tableIndex == 3">
+                    <b-button size="sm" :disabled="pagedSortedFilteredApprovalForAlls == 0" @click="retrieveTimestamps(pagedSortedFilteredApprovalForAlls.map(e => e.blockNumber))" variant="link" v-b-popover.hover.ds500="'Retrieve timestamps for allowances below'"><b-icon-clock-history shift-v="+1" font-scale="1.2"></b-icon-clock-history></b-button>
+                  </div>
+                </div> -->
+                <div v-if="sync.completed == null" class="mt-0 pr-1">
+                  <!-- <b-button size="sm" :disabled="pagedSortedFilteredEvents == 0" @click="retrieveMetadata" variant="link" v-b-popover.hover.ds500="'Retrieve NFT metadata from Reservoir'"><b-icon-cloud-download shift-v="+1" font-scale="1.2"></b-icon-cloud-download></b-button> -->
+                  <b-button size="sm" :disabled="!validAddress(settings.contract)" @click="retrieveMetadata" variant="link" v-b-popover.hover.ds500="'Retrieve NFT metadata from Reservoir'"><b-icon-cloud-download shift-v="+1" font-scale="1.2"></b-icon-cloud-download></b-button>
+                </div>
+                <div v-if="sync.completed != null" class="mt-1" style="width: 300px;">
+                  <b-progress height="1.5rem" :max="sync.total" show-progress :animated="sync.completed != null" variant="success" v-b-popover.hover.ds500="'Click the button on the right to stop'">
+                    <b-progress-bar :value="sync.completed">
+                      {{ sync.total == null ? (formatNumber(sync.completed) + (sync.records && (' ' + formatNumber(sync.records)) || '')) : (formatNumber(sync.completed) + '/' + formatNumber(sync.total) + ' ' + ((sync.completed / sync.total) * 100).toFixed(0) + '% ' + formatNumber(sync.records)) }}
+                    </b-progress-bar>
+                  </b-progress>
+                </div>
+                <div v-if="sync.completed != null" class="mt-0 pl-1">
+                  <b-button size="sm" :disabled="sync.halt" @click="sync.halt = true;" variant="link" v-b-popover.hover.ds500="'Click to stop'"><b-icon-stop-fill shift-v="-2" font-scale="1.0"></b-icon-stop-fill></b-button>
+                </div>
+                <div class="mt-0 flex-grow-1">
+                </div>
+                <div class="mt-0 pl-1">
+                  <b-form-select size="sm" v-model="settings.contractsTable.sortOption" @change="saveSettings" :options="contractsSortOptions" v-b-popover.hover.bottom="'Yeah. Sort'"></b-form-select>
+                </div>
+                <div class="mt-0 pl-1">
+                  <font size="-2" v-b-popover.hover.bottom="'# filtered / total approvalForAlls'">{{ formatNumber(sortedFilteredContracts.length) + '/' + formatNumber(Object.keys(contracts).length) }}</font>
+                </div>
+                <div class="mt-0 pl-1">
+                  <b-pagination size="sm" v-model="settings.contractsTable.currentPage" @input="saveSettings" :total-rows="sortedFilteredContracts.length" :per-page="settings.contractsTable.pageSize" style="height: 0;"></b-pagination>
+                </div>
+                <div class="mt-0 pl-1">
+                  <b-form-select size="sm" v-model="settings.contractsTable.pageSize" @change="saveSettings();" :options="pageSizes" v-b-popover.hover.bottom="'Yeah. Page size'"></b-form-select>
+                </div>
+              </div>
+
+
               <b-table small fixed striped :fields="contractsFields" :items="pagedSortedFilteredContracts" show-empty empty-html="Click [+] above" head-variant="light" class="mt-1">
                 <template #cell(number)="data">
                   <font size="-1" class="text-muted">{{ parseInt(data.index) + ((settings.contractsTable.currentPage - 1) * settings.contractsTable.pageSize) + 1 }}</font>
@@ -1001,6 +1059,10 @@
             },
             updated: null,
           },
+          contractsSortOptions: [
+            { value: 'addressasc', text: '▲ Address' },
+            { value: 'addressdsc', text: '▼ Address' },
+          ],
           eventsSortOptions: [
             { value: 'txorderasc', text: '▲ TxOrder' },
             { value: 'txorderdsc', text: '▼ TxOrder' },
@@ -1055,7 +1117,7 @@
 
           contractsFields: [
             { key: 'number', label: '#', sortable: false, thStyle: 'width: 5%;', tdClass: 'text-truncate' },
-            { key: 'contract', label: 'Contract', sortable: false, thStyle: 'width: 30%;', thClass: 'text-left', tdClass: 'text-left' },
+            { key: 'contract', label: 'Contract Address', sortable: false, thStyle: 'width: 30%;', thClass: 'text-left', tdClass: 'text-left' },
             { key: 'contractType', label: 'Type', sortable: false, thStyle: 'width: 5%;', tdClass: 'text-truncate' },
             { key: 'symbolNameDecimals', label: 'Symbol / Name / Decimals', sortable: false, thStyle: 'width: 30%;', thClass: 'text-left', tdClass: 'text-left' },
             { key: 'totalSupply', label: 'Total Supply', sortable: false, thStyle: 'width: 15%;', thClass: 'text-right', tdClass: 'text-right' },
