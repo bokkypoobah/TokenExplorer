@@ -199,9 +199,12 @@
                   </div>
                 </div> -->
                 <div v-if="sync.completed == null" class="mt-0 pr-1">
-                  <!-- <b-button size="sm" :disabled="pagedSortedFilteredEvents == 0" @click="retrieveMetadata" variant="link" v-b-popover.hover.ds500="'Retrieve NFT metadata from Reservoir'"><b-icon-cloud-download shift-v="+1" font-scale="1.2"></b-icon-cloud-download></b-button> -->
-                  <b-button size="sm" :disabled="!validAddress(settings.contract)" @click="retrieveMetadata" variant="link" v-b-popover.hover.ds500="'Retrieve NFT metadata from Reservoir'"><b-icon-cloud-download shift-v="+1" font-scale="1.2"></b-icon-cloud-download></b-button>
+                  <b-button size="sm" @click="showModalSearchContracts" variant="link" v-b-popover.hover.ds500="'WIP: Search for token contracts'"><b-icon-search shift-v="+0" font-scale="1.2"></b-icon-search></b-button>
                 </div>
+                <!-- <div v-if="sync.completed == null" class="mt-0 pr-1"> -->
+                  <!-- <b-button size="sm" :disabled="pagedSortedFilteredEvents == 0" @click="retrieveMetadata" variant="link" v-b-popover.hover.ds500="'Retrieve NFT metadata from Reservoir'"><b-icon-cloud-download shift-v="+1" font-scale="1.2"></b-icon-cloud-download></b-button> -->
+                  <!-- <b-button size="sm" :disabled="!validAddress(settings.contract)" @click="retrieveMetadata" variant="link" v-b-popover.hover.ds500="'Retrieve NFT metadata from Reservoir'"><b-icon-cloud-download shift-v="+1" font-scale="1.2"></b-icon-cloud-download></b-button> -->
+                <!-- </div> -->
                 <div v-if="sync.completed != null" class="mt-1" style="width: 300px;">
                   <b-progress height="1.5rem" :max="sync.total" show-progress :animated="sync.completed != null" variant="success" v-b-popover.hover.ds500="'Click the button on the right to stop'">
                     <b-progress-bar :value="sync.completed">
@@ -233,8 +236,8 @@
                   <font size="-1" class="text-muted">{{ parseInt(data.index) + ((settings.contractsTable.currentPage - 1) * settings.contractsTable.pageSize) + 1 }}</font>
                 </template>
                 <template #cell(address)="data">
-                  <b-link size="sm" :href="explorer + 'token/' + data.item.address" variant="link" target="_blank">
-                    {{ data.item.address }}
+                  <b-link size="sm" :href="explorer + 'token/' + data.item.address" variant="link" v-b-popover.hover.ds500="'Contract address ' + data.item.address" target="_blank">
+                    {{ data.item.address.substring(0, 8) + '...' + data.item.address.slice(-6) }}
                   </b-link>
                 </template>
                 <template #cell(contractType)="data">
@@ -276,9 +279,9 @@
                       </b-form-group>
                     </div>
                     <!-- TODO WIP -->
-                    <div class="mt-0 pr-1">
+                    <!-- <div class="mt-0 pr-1">
                       <b-button size="sm" @click="showModalSearchContracts" variant="link" v-b-popover.hover.ds500="'WIP: Search for token contracts'"><b-icon-search shift-v="+0" font-scale="1.2"></b-icon-search></b-button>
-                    </div>
+                    </div> -->
                     <div class="mt-0 pr-0">
                       <b-dropdown size="sm" id="dropdown-left" text="" variant="link" v-b-popover.hover.ds500="'Some sample token contracts'" class="m-0 ml-1 p-0">
                         <b-dropdown-item v-if="sampleContracts.length == 0" disabled>No sample contracts on this network</b-dropdown-item>
