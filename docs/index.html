@@ -68,52 +68,79 @@
 
           <b-card class="m-0 p-0 border-0" body-class="m-1 p-0">
 
-            <b-modal ref="modalsearchcontracts" v-model="modalSearchContracts.show" hide-footer header-class="m-0 px-3 py-2" body-class="m-0 p-0" body-bg-variant="light" size="lg">
-              <template #modal-title>Token Contract Search</template>
+            <b-modal ref="modalnewcontract" v-model="modalNewContract.show" hide-footer header-class="m-0 px-3 py-2" body-class="m-0 p-0" body-bg-variant="light" size="lg">
+              <template #modal-title>New Contract</template>
               <div class="m-0 p-1">
-                <b-tabs card v-model="modalSearchContracts.tabIndex" content-class="mt-1" align="right">
-                  <b-tab no-body>
+                <b-tabs card v-model="modalNewContract.tabIndex" content-class="mt-1" align="right">
+                  <b-tab no-body active>
+                    <template #title>
+                      <span v-b-popover.hover.ds500="'Enter ERC-20, ERC-721 and ERC-1155 token contract address'">By Address</span>
+                    </template>
+                  </b-tab>
+                  <!-- <b-tab no-body>
                     <template #title>
                       <span v-b-popover.hover.ds500="'ERC-20, ERC-721 and ERC-1155 token contracts already loaded'">Already Loaded</span>
                     </template>
-                  </b-tab>
-                  <b-tab no-body>
+                  </b-tab> -->
+                  <b-tab no-body disabled>
                     <template #title>
-                      <span v-b-popover.hover.ds500="'Search for ERC-20, ERC-721 and ERC-1155 tokens owned by one or more addresses'">Search by Owner Addresses</span>
+                      <span v-b-popover.hover.ds500="'Search for ERC-20, ERC-721 and ERC-1155 tokens owned by an owner address'">By Owner Address</span>
                     </template>
                   </b-tab>
-                  <b-tab no-body active>
+                  <b-tab no-body disabled>
                     <template #title>
-                      <span v-b-popover.hover.ds500="'Sample ERC-20, ERC-721 and ERC-1155 token contracts'">Sample Contracts</span>
+                      <span v-b-popover.hover.ds500="'Search for token contracts by name, ERC-721 and ERC-1155 only'">By Name</span>
                     </template>
                   </b-tab>
                 </b-tabs>
-                <div class="d-flex flex-wrap m-0 p-0">
+
+                <b-form-group label="Address:" label-for="modalnewcontract-address" label-size="sm" label-cols-sm="3" label-align-sm="right" :state="!modalNewContract.address || validAddress(modalNewContract.address)" :invalid-feedback="'Invalid address'" class="mx-0 my-1 p-0">
+                  <b-form-input size="sm" id="modalnewcontract-address" v-model.trim="modalNewContract.address" debounce="600" placeholder="0x1234...6789" class="w-75"></b-form-input>
+                </b-form-group>
+                <b-form-group label="" label-size="sm" label-cols-sm="3" label-align-sm="right" class="mx-0 my-1 p-0">
+                  <b-button size="sm" :disabled="sync.completed != null || !validAddress(modalNewContract.address)" @click="modalNewContractByAddressCheck" variant="primary">Check</b-button>
+                </b-form-group>
+                <b-form-group label="Contract Type:" label-for="modalnewcontract-contracttype" label-size="sm" label-cols-sm="3" label-align-sm="right" class="mx-0 my-1 p-0">
+                  <b-form-input size="sm" readonly id="modalnewcontract-contracttype" :value="modalNewContract.contractType ? 'ERC-' + modalNewContract.contractType : null" placeholder="Click [Check]" class="w-25"></b-form-input>
+                </b-form-group>
+                <b-form-group v-if="modalNewContract.symbol" label="Symbol:" label-for="modalnewcontract-symbol" label-size="sm" label-cols-sm="3" label-align-sm="right" class="mx-0 my-1 p-0">
+                  <b-form-input size="sm" readonly id="modalnewcontract-symbol" :value="modalNewContract.symbol" class="w-25"></b-form-input>
+                </b-form-group>
+                <b-form-group v-if="modalNewContract.name" label="Name:" label-for="modalnewcontract-name" label-size="sm" label-cols-sm="3" label-align-sm="right" class="mx-0 my-1 p-0">
+                  <b-form-input size="sm" readonly id="modalnewcontract-name" :value="modalNewContract.name" class="w-50"></b-form-input>
+                </b-form-group>
+                <b-form-group v-if="modalNewContract.decimals" label="Decimals:" label-for="modalnewcontract-decimals" label-size="sm" label-cols-sm="3" label-align-sm="right" class="mx-0 my-1 p-0">
+                  <b-form-input size="sm" readonly id="modalnewcontract-decimals" :value="modalNewContract.decimals" class="w-25"></b-form-input>
+                </b-form-group>
+                <b-form-group v-if="modalNewContract.totalSupply" label="Decimals:" label-for="modalnewcontract-totalsupply" label-size="sm" label-cols-sm="3" label-align-sm="right" class="mx-0 my-1 p-0">
+                  <b-form-input size="sm" readonly id="modalnewcontract-totalsupply" :value="formatDecimals(modalNewContract.totalSupply, modalNewContract.decimals)" class="w-25"></b-form-input>
+                </b-form-group>
+
+                <div v-if="modalNewContract.tabIndex != 0" class="d-flex flex-wrap m-0 p-0">
                   <div class="mt-0 pr-1" style="width: 10.0rem;">
                     <b-form-input :disabled="contract.contractType != 721 && contract.contractType != 1155" type="text" size="sm" v-model.trim="settings.filter.tokenId" @change="saveSettings" debounce="600" v-b-popover.hover.ds500="'Regex search'" placeholder="🔍 tokenid"></b-form-input>
                   </div>
                 </div>
-                <b-table small fixed striped :fields="eventsFields" :items="pagedSortedFilteredEvents" show-empty empty-html="Click [Retrieve] above" head-variant="light" class="mt-1">
+                <b-table v-if="modalNewContract.tabIndex != 0" small fixed striped :fields="eventsFields" :items="pagedSortedFilteredEvents" show-empty empty-html="Click [Retrieve] above" head-variant="light" class="mt-1">
                 </b-table>
-                Table here
               </div>
             </b-modal>
 
-            <b-modal ref="nonfungiblemodal" v-model="modalNonFungible.show" hide-footer header-class="m-0 px-3 py-2" body-bg-variant="light" size="lg">
+            <b-modal ref="modalnonfungible" v-model="modalNonFungible.show" hide-footer header-class="m-0 px-3 py-2" body-bg-variant="light" size="lg">
               <template #modal-title>{{ "ERC-" + modalNonFungible.type + ' Non-Fungible Token' }}</template>
 
-              <b-form-group label="contract:" label-for="nonfungiblemodal-contract" label-size="sm" label-cols-sm="2" label-align-sm="right" class="mx-0 my-1 p-0">
+              <b-form-group label="contract:" label-for="modalnonfungible-contract" label-size="sm" label-cols-sm="2" label-align-sm="right" class="mx-0 my-1 p-0">
                 <b-input-group size="sm" class="w-100">
-                  <b-form-input type="text" readonly size="sm" id="nonfungiblemodal-contract" v-model="modalNonFungible.contract"></b-form-input>
+                  <b-form-input type="text" readonly size="sm" id="modalnonfungible-contract" v-model="modalNonFungible.contract"></b-form-input>
                   <b-input-group-append>
                     <b-button size="sm" :href="explorer + 'token/' + modalNonFungible.contract + '#code'" variant="link" v-b-popover.hover.ds500="'View in explorer'" target="_blank" class="m-0 ml-1 p-0"><b-icon-link45deg shift-v="+1" font-scale="0.95"></b-icon-link45deg></b-button>
                   </b-input-group-append>
                 </b-input-group>
               </b-form-group>
 
-              <b-form-group label="tokenId:" label-for="nonfungiblemodal-tokenid" label-size="sm" label-cols-sm="2" label-align-sm="right" class="mx-0 my-1 p-0">
+              <b-form-group label="tokenId:" label-for="modalnonfungible-tokenid" label-size="sm" label-cols-sm="2" label-align-sm="right" class="mx-0 my-1 p-0">
                 <b-input-group size="sm" class="w-100">
-                  <b-form-input type="text" readonly size="sm" id="nonfungiblemodal-tokenid" v-model="modalNonFungible.tokenId"></b-form-input>
+                  <b-form-input type="text" readonly size="sm" id="modalnonfungible-tokenid" v-model="modalNonFungible.tokenId"></b-form-input>
                   <b-input-group-append>
                     <b-button size="sm" :href="nonFungibleViewerURL(modalNonFungible.contract, modalNonFungible.tokenId)" variant="link" v-b-popover.hover.ds500="'View in NFT viewer'" target="_blank" class="m-0 ml-1 p-0"><b-icon-link45deg shift-v="+1" font-scale="0.95"></b-icon-link45deg></b-button>
                   </b-input-group-append>
@@ -199,7 +226,7 @@
                   </div>
                 </div> -->
                 <div v-if="sync.completed == null" class="mt-0 pr-1">
-                  <b-button size="sm" @click="showModalSearchContracts" variant="link" v-b-popover.hover.ds500="'WIP: Search for token contracts'"><b-icon-search shift-v="+0" font-scale="1.2"></b-icon-search></b-button>
+                  <b-button size="sm" @click="showModalAddTokenContract" variant="link" v-b-popover.hover.ds500="'Add token contract'"><b-icon-plus shift-v="+0" font-scale="1.2"></b-icon-plus></b-button>
                 </div>
                 <!-- <div v-if="sync.completed == null" class="mt-0 pr-1"> -->
                   <!-- <b-button size="sm" :disabled="pagedSortedFilteredEvents == 0" @click="retrieveMetadata" variant="link" v-b-popover.hover.ds500="'Retrieve NFT metadata from Reservoir'"><b-icon-cloud-download shift-v="+1" font-scale="1.2"></b-icon-cloud-download></b-button> -->
@@ -280,7 +307,7 @@
                     </div>
                     <!-- TODO WIP -->
                     <!-- <div class="mt-0 pr-1">
-                      <b-button size="sm" @click="showModalSearchContracts" variant="link" v-b-popover.hover.ds500="'WIP: Search for token contracts'"><b-icon-search shift-v="+0" font-scale="1.2"></b-icon-search></b-button>
+                      <b-button size="sm" @click="showModalAddTokenContract" variant="link" v-b-popover.hover.ds500="'WIP: Search for token contracts'"><b-icon-search shift-v="+0" font-scale="1.2"></b-icon-search></b-button>
                     </div> -->
                     <div class="mt-0 pr-0">
                       <b-dropdown size="sm" id="dropdown-left" text="" variant="link" v-b-popover.hover.ds500="'Some sample token contracts'" class="m-0 ml-1 p-0">
@@ -1045,9 +1072,16 @@
               result: null,
             },
           },
-          modalSearchContracts: {
-            show: false,
+          modalNewContract: {
+            show: true, // TODO: false,
             tabIndex: 0,
+            // TODO address: null,
+            address: "0x2823589Ae095D99bD64dEeA80B4690313e2fB519", // WEENUS
+            contractType: null,
+            symbol: null,
+            name: null,
+            decimals: null,
+            totalSupply: null,
           },
           modalNonFungible: {
             show: false,
@@ -1849,9 +1883,9 @@
           nonFungibleViewerURL(contract, tokenId) {
             return this.nonFungibleViewer.replace(/\${contract}/, contract).replace(/\${tokenId}/, tokenId);
           },
-          async showModalSearchContracts() {
-            console.log(now() + " INFO showModalSearchContracts");
-            this.modalSearchContracts.show = true;
+          async showModalAddTokenContract() {
+            console.log(now() + " INFO showModalAddTokenContract");
+            this.modalNewContract.show = true;
           },
           async viewNonFungible(type, contract, tokenId) {
             console.log(now() + " INFO viewNonFungible - type: " + type + ", contract: " + contract + ", tokenId: " + tokenId);
@@ -1924,6 +1958,16 @@
             } catch (e) {
               console.log(now() + " viewNonFungible - ERROR: " + e.message);
             }
+          },
+
+          async modalNewContractByAddressCheck() {
+            console.log(now() + " INFO modalNewContractByAddressCheck BEGIN - this.modalNewContract: " + JSON.stringify(this.modalNewContract, null, 2));
+            this.modalNewContract.contractType = 20;
+            this.modalNewContract.symbol = "ABC";
+            this.modalNewContract.name = "abcdef";
+            this.modalNewContract.decimals = 18;
+            this.modalNewContract.totalSupply = "10000000000000000000000000";
+            console.log(now() + " INFO modalNewContractByAddressCheck END - this.modalNewContract: " + JSON.stringify(this.modalNewContract, null, 2));
           },
 
           async retrieveEvents() {
