@@ -97,7 +97,7 @@
                 <b-form-group label="Address:" label-for="modalnewcontract-address" label-size="sm" label-cols-sm="3" label-align-sm="right" :state="!modalNewContract.address || validAddress(modalNewContract.address)" :invalid-feedback="'Invalid address'" class="mx-0 my-1 p-0">
                   <b-form-input size="sm" id="modalnewcontract-address" v-model.trim="modalNewContract.address" debounce="600" placeholder="0x1234...6789" class="w-75"></b-form-input>
                 </b-form-group>
-                <b-form-group label="" label-size="sm" label-cols-sm="3" label-align-sm="right" class="mx-0 my-1 p-0">
+                <b-form-group label="" label-size="sm" label-cols-sm="3" label-align-sm="right" :state="!modalNewContract.error" :invalid-feedback="modalNewContract.error" class="mx-0 my-1 p-0">
                   <b-button size="sm" :disabled="sync.completed != null || !validAddress(modalNewContract.address)" @click="modalNewContractByAddressCheck" variant="primary">Check</b-button>
                 </b-form-group>
                 <b-form-group label="Contract Type:" label-for="modalnewcontract-contracttype" label-size="sm" label-cols-sm="3" label-align-sm="right" class="mx-0 my-1 p-0">
@@ -112,7 +112,7 @@
                 <b-form-group v-if="modalNewContract.decimals" label="Decimals:" label-for="modalnewcontract-decimals" label-size="sm" label-cols-sm="3" label-align-sm="right" class="mx-0 my-1 p-0">
                   <b-form-input size="sm" readonly id="modalnewcontract-decimals" :value="modalNewContract.decimals" class="w-25"></b-form-input>
                 </b-form-group>
-                <b-form-group v-if="modalNewContract.totalSupply" label="Decimals:" label-for="modalnewcontract-totalsupply" label-size="sm" label-cols-sm="3" label-align-sm="right" class="mx-0 my-1 p-0">
+                <b-form-group v-if="modalNewContract.totalSupply" label="Total Supply:" label-for="modalnewcontract-totalsupply" label-size="sm" label-cols-sm="3" label-align-sm="right" class="mx-0 my-1 p-0">
                   <b-form-input size="sm" readonly id="modalnewcontract-totalsupply" :value="formatDecimals(modalNewContract.totalSupply, modalNewContract.decimals)" class="w-25"></b-form-input>
                 </b-form-group>
 
@@ -1073,7 +1073,7 @@
             },
           },
           modalNewContract: {
-            show: true, // TODO: false,
+            show: false,
             tabIndex: 0,
             // TODO address: null,
             address: "0x2823589Ae095D99bD64dEeA80B4690313e2fB519", // WEENUS
@@ -1082,6 +1082,7 @@
             name: null,
             decimals: null,
             totalSupply: null,
+            error: null,
           },
           modalNonFungible: {
             show: false,
@@ -1960,13 +1961,73 @@
             }
           },
 
+          async getContractInfo(address) {
+            console.log(now() + " INFO getContractInfo BEGIN - address: " + address);
+            const provider = new ethers.providers.Web3Provider(window.ethereum);
+            const contractAddress = ethers.utils.getAddress(address);
+            const erc20 = new ethers.Contract(contractAddress, ERC20ABI, provider);
+            const erc165 = new ethers.Contract(contractAddress, ERC165ABI, provider);
+            const erc721 = new ethers.Contract(contractAddress, ERC721ABI, provider);
+            const erc1155 = new ethers.Contract(contractAddress, ERC1155ABI, provider);
+            let [ error, supportsERC721, supportsERC1155 ] = [ null, false, false ];
+            let [ contractType, symbol, name, decimals, totalSupply ] = [ null, null, null, null, null ];
+            const code = await provider.getCode(contractAddress);
+            // console.log(now() + " INFO getContractInfo - code: " + code);
+            if (!code || code.length <= 2) {
+              error = "Address does not contain contract code";
+            }
+            try {
+              supportsERC721 = await erc165.supportsInterface(ERC721_INTERFACE);
+            } catch (e) {
+            }
+            if (supportsERC721) {
+              contractType = 721;
+              try {
+                symbol = await erc721.symbol();
+              } catch (e) {
+              }
+            } else {
+              try {
+                supportsERC1155 = await erc165.supportsInterface(ERC1155_INTERFACE);
+                if (supportsERC1155) {
+                  contractType = 1155;
+                }
+              } catch (e) {
+              }
+            }
+            if (!contractType) {
+              try {
+                decimals = parseInt(await erc20.decimals());
+              } catch (e) {
+              }
+              try {
+                totalSupply = (await erc20.totalSupply()).toString();
+              } catch (e) {
+              }
+              if (decimals != null && totalSupply) {
+                contractType = 20;
+                try {
+                  symbol = await erc20.symbol();
+                } catch (e) {
+                }
+                try {
+                  name = await erc20.name();
+                } catch (e) {
+                }
+              }
+            }
+            return { contractType, symbol, name, decimals, totalSupply, error };
+          },
+
           async modalNewContractByAddressCheck() {
             console.log(now() + " INFO modalNewContractByAddressCheck BEGIN - this.modalNewContract: " + JSON.stringify(this.modalNewContract, null, 2));
-            this.modalNewContract.contractType = 20;
-            this.modalNewContract.symbol = "ABC";
-            this.modalNewContract.name = "abcdef";
-            this.modalNewContract.decimals = 18;
-            this.modalNewContract.totalSupply = "10000000000000000000000000";
+            const info = await this.getContractInfo(this.modalNewContract.address);
+            this.modalNewContract.contractType = info.contractType;
+            this.modalNewContract.symbol = info.symbol;
+            this.modalNewContract.name = info.name;
+            this.modalNewContract.decimals = info.decimals;
+            this.modalNewContract.totalSupply = info.totalSupply;
+            this.modalNewContract.error = info.error;
             console.log(now() + " INFO modalNewContractByAddressCheck END - this.modalNewContract: " + JSON.stringify(this.modalNewContract, null, 2));
           },
 
